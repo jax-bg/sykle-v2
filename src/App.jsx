@@ -15,6 +15,7 @@ import Oasis from './pages/Oasis';
 import Harvest from './pages/Harvest';
 import Glean from './pages/Glean';
 import SecurePage from './pages/SecurePage';
+import Login from './pages/Login';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -64,6 +65,7 @@ const AuthenticatedApp = () => {
         <Route path="/oasis" element={<Oasis />} />
         <Route path="/harvest" element={<Harvest />} />
         <Route path="/glean" element={<Glean />} />
+        <Route path="/login" element={<Login />} />
         <Route element={<ProtectedRoute unauthenticatedElement={authMessage} />}>
           <Route path="/secure" element={<SecurePage />} />
         </Route>

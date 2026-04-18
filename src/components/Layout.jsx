@@ -1,5 +1,5 @@
 import { Outlet, NavLink, useLocation } from "react-router-dom";
-import { Home, ClipboardList, Target, MapPin, Gift, ScanLine } from "lucide-react";
+import { Home, ClipboardList, Target, MapPin, Gift, ScanLine, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
@@ -9,6 +9,7 @@ const navItems = [
   { path: "/oasis", label: "Oasis", icon: MapPin },
   { path: "/harvest", label: "Harvest", icon: Gift },
   { path: "/glean", label: "Glean", icon: ScanLine },
+  { path: "/secure", label: "Secure", icon: ShieldCheck },
 ];
 
 export default function Layout() {

@@ -1,19 +1,16 @@
-const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
-
 import { supabase } from '../lib/supabase';
 
 import React, { createContext, useState, useContext, useEffect } from 'react';
 
-import { appParams } from '@/lib/app-params';
+const AuthContext = createContext(/** @type {any} */ (null));
 
-const AuthContext = createContext();
-
+/** @param {{ children: React.ReactNode }} props */
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(/** @type {any} */ (null));
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
   const [isLoadingPublicSettings, setIsLoadingPublicSettings] = useState(true);
-  const [authError, setAuthError] = useState(null);
+  const [authError, setAuthError] = useState(/** @type {any} */ (null));
   const [authChecked, setAuthChecked] = useState(false);
   const [appPublicSettings, setAppPublicSettings] = useState(null);
 
@@ -25,107 +22,74 @@ export const AuthProvider = ({ children }) => {
     try {
       setIsLoadingPublicSettings(true);
       setAuthError(null);
-      
-     const { data, error } = await supabase.auth.signInWithPassword({
-  email: email,
-  password: password,
-});
-      
-      try {
-        const publicSettings = await appClient.get(`/prod/public-settings/by-id/${appParams.appId}`);
-        setAppPublicSettings(publicSettings);
-        
-        if (appParams.token) {
-          await checkUserAuth();
-        } else {
-          setIsLoadingAuth(false);
-          setIsAuthenticated(false);
-          setAuthChecked(true);
-        }
-        setIsLoadingPublicSettings(false);
-      } catch (appError) {
-        console.error('App state check failed:', appError);
-        
-
-        if (appError.status === 403 && appError.data?.extra_data?.reason) {
-          const reason = appError.data.extra_data.reason;
-          if (reason === 'auth_required') {
-            setAuthError({
-              type: 'auth_required',
-              message: 'Authentication required'
-            });
-          } else if (reason === 'user_not_registered') {
-            setAuthError({
-              type: 'user_not_registered',
-              message: 'User not registered for this app'
-            });
-          } else {
-            setAuthError({
-              type: reason,
-              message: appError.message
-            });
-          }
-        } else {
-          setAuthError({
-            type: 'unknown',
-            message: appError.message || 'Failed to load app'
-          });
-        }
-        setIsLoadingPublicSettings(false);
-        setIsLoadingAuth(false);
-      }
+      await checkUserAuth();
     } catch (error) {
-      console.error('Unexpected error:', error);
+      console.error('App state check failed:', error);
+      const err = /** @type {any} */ (error);
       setAuthError({
         type: 'unknown',
-        message: error.message || 'An unexpected error occurred'
+        message: err?.message || 'Authentication check failed.'
       });
+    } finally {
       setIsLoadingPublicSettings(false);
-      setIsLoadingAuth(false);
     }
   };
 
   const checkUserAuth = async () => {
     try {
-      // Now check if the user is authenticated
       setIsLoadingAuth(true);
-      const currentUser = await db.auth.me();
-      setUser(currentUser);
-      setIsAuthenticated(true);
-      setIsLoadingAuth(false);
-      setAuthChecked(true);
+      const {
+        data: { user },
+        error
+      } = await supabase.auth.getUser();
+
+      if (error) {
+        throw error;
+      }
+
+      setUser(user ?? null);
+      setIsAuthenticated(!!user);
     } catch (error) {
       console.error('User auth check failed:', error);
-      setIsLoadingAuth(false);
+      setUser(null);
       setIsAuthenticated(false);
+    } finally {
+      setIsLoadingAuth(false);
       setAuthChecked(true);
-      
-      // If user auth fails, it might be an expired token
-      if (error.status === 401 || error.status === 403) {
-        setAuthError({
-          type: 'auth_required',
-          message: 'Authentication required'
-        });
-      }
     }
   };
 
-  const logout = (shouldRedirect = true) => {
+  const signInWithGoogle = async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/login`
+      }
+    });
+
+    if (error) {
+      throw error;
+    }
+  };
+
+  const logout = async (shouldRedirect = true) => {
+    try {
+      await supabase.auth.signOut();
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
+
     setUser(null);
     setIsAuthenticated(false);
-    
+    setAuthChecked(true);
+
     if (shouldRedirect) {
-      // Use the SDK's logout method which handles token cleanup and redirect
-      db.auth.logout(window.location.href);
-    } else {
-      // Just remove the token without redirect
-      db.auth.logout();
+      window.location.href = '/';
     }
   };
 
   const navigateToLogin = () => {
-    // Use the SDK's redirectToLogin method
-    db.auth.redirectToLogin(window.location.href);
+    window.location.href = '/login';
   };
 
   return (
@@ -139,6 +103,7 @@ export const AuthProvider = ({ children }) => {
       authChecked,
       logout,
       navigateToLogin,
+      signInWithGoogle,
       checkUserAuth,
       checkAppState
     }}>
