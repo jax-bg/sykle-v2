@@ -50,7 +50,7 @@ export default function Home() {
   const totalWaste = recentEntries.filter(e => e.category === "waste").reduce((s, e) => s + (e.amount || 0), 0);
   const totalRecycled = recentEntries.filter(e => e.subtype === "recyclable" || e.subtype === "e-waste").reduce((s, e) => s + (e.amount || 0), 0);
 
-  const firstName = user?.full_name?.split(" ")[0] || "Eco Hero";
+  const firstName = user?.full_name?.split(" ")[0] || "TPSian";
 
   if (loading) return (
     <div className="flex items-center justify-center min-h-screen">
@@ -71,7 +71,7 @@ export default function Home() {
             <div className="flex items-center gap-2 bg-white/10 backdrop-blur rounded-2xl px-4 py-2">
               <Star size={16} className="text-gold fill-gold" />
               <span className="font-bold text-lg">{(user?.points || 0).toLocaleString()}</span>
-              <span className="text-xs text-primary-foreground/60">pts</span>
+              <span className="text-xs text-primary-foreground/60">Seeds</span>
             </div>
           </div>
 
@@ -111,7 +111,7 @@ export default function Home() {
 
         {/* Tip of the day */}
         <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 mb-6">
-          <p className="text-xs font-medium text-amber-600 uppercase tracking-wide mb-1">Eco Tip</p>
+          <p className="text-xs font-medium text-amber-600 uppercase tracking-wide mb-1">Here's a Tip</p>
           <p className="text-sm text-amber-900">{tip}</p>
         </div>
 
@@ -123,17 +123,17 @@ export default function Home() {
             <span className="font-semibold">Log Entry</span>
             <span className="text-xs text-primary-foreground/70">Track waste or water</span>
           </Link>
-          <Link to="/goals" className="bg-card border border-border rounded-2xl p-5 flex flex-col gap-2 hover:bg-muted transition-colors">
+          <Link to="/plant" className="bg-card border border-border rounded-2xl p-5 flex flex-col gap-2 hover:bg-muted transition-colors">
             <span className="text-2xl">🎯</span>
             <span className="font-semibold">My Goals</span>
             <span className="text-xs text-muted-foreground">View progress</span>
           </Link>
-          <Link to="/map" className="bg-card border border-border rounded-2xl p-5 flex flex-col gap-2 hover:bg-muted transition-colors">
+          <Link to="/oasis" className="bg-card border border-border rounded-2xl p-5 flex flex-col gap-2 hover:bg-muted transition-colors">
             <span className="text-2xl">🗺️</span>
             <span className="font-semibold">Find Sites</span>
             <span className="text-xs text-muted-foreground">Disposal near you</span>
           </Link>
-          <Link to="/rewards" className="bg-gold/10 border border-gold/30 rounded-2xl p-5 flex flex-col gap-2 hover:bg-gold/20 transition-colors">
+          <Link to="/harvest" className="bg-gold/10 border border-gold/30 rounded-2xl p-5 flex flex-col gap-2 hover:bg-gold/20 transition-colors">
             <span className="text-2xl">🎁</span>
             <span className="font-semibold">Redeem</span>
             <span className="text-xs text-muted-foreground">Use your points</span>

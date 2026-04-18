@@ -89,8 +89,8 @@ export default function Goals() {
     <div className="min-h-screen bg-background">
       <div className="bg-gradient-to-br from-primary to-[hsl(178,60%,20%)] text-primary-foreground px-6 pt-10 pb-8">
         <div className="max-w-2xl mx-auto">
-          <h1 className="font-display text-3xl font-semibold">Goals & Level</h1>
-          <p className="text-primary-foreground/60 text-sm mt-1">Set targets and track your progress</p>
+          <h1 className="font-display text-3xl font-semibold">Plant</h1>
+          <p className="text-primary-foreground/60 text-sm mt-1">Set goals to earn seeds.</p>
         </div>
       </div>
 
