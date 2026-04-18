@@ -5,6 +5,7 @@ import { Camera, Search, X, Loader2, AlertCircle, RefreshCw, History, ChevronRig
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/lib/AuthContext";
 
 const ECO_GRADES = {
   a: { label: "Excellent", color: "bg-green-500", text: "text-green-700", bg: "bg-green-50", border: "border-green-200", emoji: "🌿" },
@@ -68,21 +69,20 @@ async function getCurrentUserId() {
 }
 
 async function selectHistoryRows(limit = 50) {
-  let lastError;
   const userId = await getCurrentUserId();
+  if (!userId) {
+    return { data: [], table: null };
+  }
 
+  let lastError;
   for (const table of HISTORY_TABLES) {
-    let query = supabase
+    const { data, error } = await supabase
       .from(table)
       .select("*")
+      .eq("user_id", userId)
       .order("created_at", { ascending: false })
       .limit(limit);
 
-    if (userId) {
-      query = query.eq("user_id", userId);
-    }
-
-    const { data, error } = await query;
     if (!error) return { data, table };
     lastError = error;
     if (!isTableNotFoundError(error)) throw error;
@@ -92,13 +92,13 @@ async function selectHistoryRows(limit = 50) {
 }
 
 async function insertHistoryRow(record) {
-  let lastError;
   const userId = await getCurrentUserId();
   if (!userId) {
     throw new Error("Not authenticated: history requires a signed-in user.");
   }
   const payload = { ...record, user_id: userId };
 
+  let lastError;
   for (const table of HISTORY_TABLES) {
     const { error } = await supabase.from(table).insert([payload]);
     if (!error) return table;
@@ -240,6 +240,7 @@ export default function Scanner() {
   const scanningRef = useRef(false);
   const animRef = useRef(null);
 
+  const { isAuthenticated, navigateToLogin } = useAuth();
   const [tab, setTab] = useState("scan"); // scan | history
   const [mode, setMode] = useState("idle");
   const [manualBarcode, setManualBarcode] = useState("");
@@ -337,6 +338,11 @@ async function lookupBarcode(barcode) {
     const p = await fetchProduct(barcode);
     const result = { ...p, barcode };
     setProduct(result);
+
+    if (!isAuthenticated) {
+      setError("Sign in to save this scan to your history.");
+      return;
+    }
 
     await insertHistoryRow({
       barcode: barcode,
