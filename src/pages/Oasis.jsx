@@ -106,8 +106,8 @@ export default function MapPage() {
       {/* Header */}
       <div className="bg-gradient-to-br from-primary to-[hsl(178,60%,20%)] text-primary-foreground px-6 pt-10 pb-6">
         <div className="max-w-4xl mx-auto">
-          <h1 className="font-display text-3xl font-semibold">Disposal Map</h1>
-          <p className="text-primary-foreground/60 text-sm mt-1">Find certified recycling & waste sites in the UAE</p>
+          <h1 className="font-display text-3xl font-semibold">Oasis</h1>
+          <p className="text-primary-foreground/60 text-sm mt-1">See where your waste goes.</p>
         </div>
       </div>
 
