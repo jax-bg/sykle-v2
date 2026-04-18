@@ -7,12 +7,12 @@ import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import Layout from './components/Layout';
 // Add page imports here
-import Home from './pages/Home';
+import Garden from './pages/Garden';
 import Log from './pages/Log';
-import Goals from './pages/Goals';
-import MapPage from './pages/MapPage';
-import Rewards from './pages/Rewards';
-import Scanner from './pages/Scanner';
+import Plant from './pages/Plant';
+import Oasis from './pages/Oasis';
+import Harvest from './pages/Harvest';
+import Glean from './pages/Glean';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();

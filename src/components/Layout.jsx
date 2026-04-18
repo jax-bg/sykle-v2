@@ -3,12 +3,12 @@ import { Home, ClipboardList, Target, MapPin, Gift, ScanLine } from "lucide-reac
 import { cn } from "@/lib/utils";
 
 const navItems = [
-  { path: "/", label: "Home", icon: Home },
+  { path: "/", label: "Garden", icon: Home },
   { path: "/log", label: "Log", icon: ClipboardList },
-  { path: "/goals", label: "Goals", icon: Target },
-  { path: "/map", label: "Map", icon: MapPin },
-  { path: "/rewards", label: "Rewards", icon: Gift },
-  { path: "/scanner", label: "Scanner", icon: ScanLine },
+  { path: "/plant", label: "Plant", icon: Target },
+  { path: "/oasis", label: "Oasis", icon: MapPin },
+  { path: "/harvest", label: "Harvest", icon: Gift },
+  { path: "/glean", label: "Glean", icon: ScanLine },
 ];
 
 export default function Layout() {
