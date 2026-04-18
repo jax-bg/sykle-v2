@@ -13,12 +13,12 @@ const LEVEL_MILESTONES = [
   { level: 1, title: "Seedling", emoji: "🌱", points: 0 },
   { level: 2, title: "Sprout", emoji: "🌿", points: 200 },
   { level: 3, title: "Sapling", emoji: "🪴", points: 500 },
-  { level: 4, title: "Tree", emoji: "🌳", points: 1000 },
-  { level: 5, title: "Grove", emoji: "🌲", points: 2000 },
-  { level: 6, title: "Forest", emoji: "🏞️", points: 3500 },
-  { level: 7, title: "Biome", emoji: "🌍", points: 5500 },
-  { level: 8, title: "Ecosystem", emoji: "🌏", points: 8000 },
-  { level: 9, title: "Rainforest", emoji: "🌎", points: 12000 },
+  { level: 4, title: "Tree", emoji: "🌴", points: 1000 },
+  { level: 5, title: "Grove", emoji: "🌳", points: 2000 },
+  { level: 6, title: "Forest", emoji: "🌲", points: 3500 },
+  { level: 7, title: "Rainforest", emoji: "🎄", points: 5500 },
+  { level: 8, title: "Biome", emoji: "🏞️", points: 8000 },
+  { level: 9, title: "Ecosystem", emoji: "🌎", points: 12000 },
   { level: 10, title: "Earth Guardian", emoji: "🌟", points: 18000 },
 ];
 

@@ -5,8 +5,8 @@ module.exports = {
   theme: {
     extend: {
       fontFamily: {
-        inter: ['Inter', 'sans-serif'],
-        display: ['Playfair Display', 'serif'],
+        inter: ['Bellota Text', 'sans-serif'],
+        display: ['Parkinsans', 'sans-serif'],
       },
       borderRadius: {
         lg: 'var(--radius)',
