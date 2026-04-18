@@ -1,4 +1,4 @@
-import { db } from "@/lib/supabase";
+import { supabase } from "@/lib/supabase";
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Camera, Search, X, Loader2, AlertCircle, RefreshCw, History, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -198,12 +198,17 @@ export default function Scanner() {
     return () => stopCamera();
   }, []);
 
-  async function loadHistory() {
-    setHistoryLoading(true);
+async function loadHistory() {
+  setHistoryLoading(true);
+  try {
     const items = await db.entities.ScanHistory.list("-created_at", 50);
-    setHistory(items);
+    setHistory(items || []);
+  } catch (err) {
+    console.error("History refresh failed:", err);
+  } finally {
     setHistoryLoading(false);
   }
+}
 
   function stopCamera() {
     if (animRef.current) cancelAnimationFrame(animRef.current);
@@ -258,7 +263,6 @@ async function lookupBarcode(barcode) {
   setLoading(true);
   setError(null);
   setProduct(null);
-  setMode("idle"); // Ensure scanner UI resets
   
   try {
     const p = await fetchProduct(barcode);
@@ -277,6 +281,7 @@ async function lookupBarcode(barcode) {
     });
 
     await loadHistory();
+    
   } catch (err) {
     console.error("Connection Error:", err.message);
     setError("Failed to save to history. Check your connection.");
