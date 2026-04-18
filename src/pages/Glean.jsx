@@ -256,31 +256,30 @@ export default function Scanner() {
   }, []);
 
   async function lookupBarcode(barcode) {
-    setLoading(true);
-    setError(null);
-    setProduct(null);
-    setMode("idle");
-    try {
-      const p = await fetchProduct(barcode);
-      const result = { ...p, barcode };
-      setProduct(result);
-      // Save to history
-      await db.entities.ScanHistory.create({
-        barcode,
-        product_name: p.product_name || "",
-        brands: p.brands || "",
-        ecoscore_grade: p.ecoscore_grade || "",
-        ecoscore_score: p.ecoscore_score ?? null,
-        image_url: p.image_front_url || "",
-        origins: p.origins_tags?.slice(0, 1).map(t => t.replace("en:", "").replace(/-/g, " ")).join(", ") || "",
-        packaging: p.packaging_tags?.slice(0, 2).map(t => t.replace("en:", "").replace(/-/g, " ")).join(", ") || "",
-      });
-      await loadHistory();
-    } catch {
-      setError("Product not found in Open Food Facts database. Try a different barcode.");
-    }
+  setLoading(true);
+  setError(null);
+  setProduct(null);
+  try {
+    const p = await fetchProduct(barcode); 
+    
+    const result = { ...p, barcode }; 
+    setProduct(result);
+
+    await db.entities.ScanHistory.create({
+      barcode,
+      product_name: p.product_name || "Unknown Product",
+      brands: p.brands || "",
+      ecoscore_grade: p.ecoscore_grade || "unknown",
+    });
+
+    await loadHistory();
+  } catch (err) {
+    console.error(err); 
+    setError("Product not found or connection error.");
+  } finally {
     setLoading(false);
   }
+}
 
   async function handleManualSearch(e) {
     e.preventDefault();
