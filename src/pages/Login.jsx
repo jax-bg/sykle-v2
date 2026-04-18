@@ -54,7 +54,7 @@ export default function Login() {
       <div className="w-full max-w-md rounded-3xl border border-border bg-card p-8 shadow-lg">
         <h1 className="text-3xl font-semibold mb-3">Sign in with Google</h1>
         <p className="text-sm text-muted-foreground mb-6">
-          You must sign in before accessing protected content.
+          You must sign in to save your history.
         </p>
 
         {error && (
