@@ -87,12 +87,12 @@ export default function Rewards() {
       {/* Header */}
       <div className="bg-gradient-to-br from-[hsl(40,60%,35%)] to-[hsl(30,70%,28%)] text-white px-6 pt-10 pb-8">
         <div className="max-w-2xl mx-auto">
-          <h1 className="font-display text-3xl font-semibold">Rewards</h1>
-          <p className="text-white/60 text-sm mt-1">Redeem your eco points for real benefits</p>
+          <h1 className="font-display text-3xl font-semibold">Harvest</h1>
+          <p className="text-white/60 text-sm mt-1">Give your seeds and reap your rewards.</p>
           <div className="flex items-center gap-2 mt-4 bg-white/15 backdrop-blur rounded-2xl px-4 py-3 w-fit">
             <Star size={18} className="text-gold fill-gold" />
             <span className="font-bold text-xl">{(user?.points || 0).toLocaleString()}</span>
-            <span className="text-white/70 text-sm">points available</span>
+            <span className="text-white/70 text-sm">seeds available</span>
           </div>
         </div>
       </div>
