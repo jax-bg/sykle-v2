@@ -201,7 +201,7 @@ export default function Scanner() {
 
   async function loadHistory() {
     setHistoryLoading(true);
-    const items = await db.entities.ScanHistory.list("-created_date", 50);
+    const items = await db.entities.ScanHistory.list("-created_at", 50);
     setHistory(items);
     setHistoryLoading(false);
   }
@@ -259,23 +259,32 @@ export default function Scanner() {
   setLoading(true);
   setError(null);
   setProduct(null);
-  try {
-    const p = await fetchProduct(barcode); 
-    
-    const result = { ...p, barcode }; 
-    setProduct(result);
+ 
+try {
+  const p = await fetchProduct(barcode);
+  const result = { ...p, barcode };
+  setProduct(result);
 
-    await db.entities.ScanHistory.create({
-      barcode,
-      product_name: p.product_name || "Unknown Product",
+  const { error: dbError } = await supabase
+    .from('ScanHistory')
+    .insert([{
+      barcode: barcode,
+      product_name: p.product_name || "",
       brands: p.brands || "",
-      ecoscore_grade: p.ecoscore_grade || "unknown",
-    });
+      ecoscore_grade: p.ecoscore_grade || "",
+      ecoscore_score: p.ecoscore_score ?? null,
+      image_url: p.image_front_url || "",
+      origins: p.origins_tags?.slice(0, 1).map(t => t.replace("en:", "").replace(/-/g, " ")).join(", ") || "",
+      packaging: p.packaging_tags?.slice(0, 2).map(t => t.replace("en:", "").replace(/-/g, " ")).join(", ") || "",
+    }]);
 
-    await loadHistory();
-  } catch (err) {
-    console.error(err); 
-    setError("Product not found or connection error.");
+  if (dbError) throw dbError; // Catch database-specific errors
+
+  await loadHistory();
+} catch (err) {
+  console.error("Connection Error:", err.message);
+  setError("Failed to save to history. Check your connection.");
+}
   } finally {
     setLoading(false);
   }
