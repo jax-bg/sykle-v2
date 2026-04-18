@@ -38,6 +38,17 @@ export const AuthProvider = ({ children }) => {
   const checkUserAuth = async () => {
     try {
       setIsLoadingAuth(true);
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) {
+        throw sessionError;
+      }
+
+      if (!sessionData?.session) {
+        setUser(null);
+        setIsAuthenticated(false);
+        return;
+      }
+
       const {
         data: { user },
         error
@@ -50,9 +61,15 @@ export const AuthProvider = ({ children }) => {
       setUser(user ?? null);
       setIsAuthenticated(!!user);
     } catch (error) {
-      console.error('User auth check failed:', error);
-      setUser(null);
-      setIsAuthenticated(false);
+      const err = /** @type {any} */ (error);
+      if (err?.message?.includes('Auth session missing')) {
+        setUser(null);
+        setIsAuthenticated(false);
+      } else {
+        console.error('User auth check failed:', error);
+        setUser(null);
+        setIsAuthenticated(false);
+      }
     } finally {
       setIsLoadingAuth(false);
       setAuthChecked(true);
