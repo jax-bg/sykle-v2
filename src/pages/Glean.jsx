@@ -1,4 +1,4 @@
-import { supabase as db } from "@/lib/supabase";
+import { db } from "@/lib/supabase";
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Camera, Search, X, Loader2, AlertCircle, RefreshCw, History, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";

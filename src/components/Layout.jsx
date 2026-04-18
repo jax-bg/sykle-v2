@@ -22,7 +22,7 @@ export default function Layout() {
               <span className="text-lg">🌿</span>
             </div>
             <div>
-              <p className="font-display font-semibold text-sidebar-foreground text-lg leading-tight">EcoJourney</p>
+              <p className="font-display font-semibold text-sidebar-foreground text-lg leading-tight">sykle</p>
               <p className="text-xs text-sidebar-foreground/50">UAE</p>
             </div>
           </div>
