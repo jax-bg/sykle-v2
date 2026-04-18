@@ -9,14 +9,13 @@ import { Flame, Droplets, Trash2, Recycle, Star } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const tips = [
-  "Turn off the tap while brushing — save up to 6L per minute! 💧",
-  "Use a reusable bag — each one saves ~700 plastic bags per year. 🛍️",
-  "Fix a leaky faucet — it can waste 3,000L per month! 🔧",
-  "Separate your recyclables before disposal — it matters. ♻️",
-  "Report illegal dumping to Tadweer or Dubai Municipality. 📢",
-  "Avoid single-use plastics — UAE has a national ban in progress. 🇦🇪",
-  "Compost food waste — reduces landfill & creates great soil. 🌱",
-  "Cold water laundry cuts energy use by 90%! 🧺",
+  "Turn off the tap while brushing to save water.",
+  "Use a reusable bag to cut your plastic usage.",
+  "Fixing leaks around the house can reduce not only wasted water but your utility bill too.",
+  "Segregate your trash before disposal to improve waste management efficiency.",
+  "Avoid single-use plastics in line with your region's regulations.",
+  "Compost leftover food scraps to create mulch.",
+  "Using cold water for your laundry can save tons of energy.",
 ];
 
 export default function Home() {
