@@ -45,6 +45,44 @@ async function fetchProduct(barcode) {
   throw lastErr || new Error("Product not found");
 }
 
+const HISTORY_TABLES = ["scan_history", "ScanHistory"];
+
+function isTableNotFoundError(error) {
+  const msg = error?.message || "";
+  return /(does not exist|relation .* does not exist|table .* does not exist)/i.test(msg);
+}
+
+async function selectHistoryRows(limit = 50) {
+  let lastError;
+
+  for (const table of HISTORY_TABLES) {
+    const { data, error } = await supabase
+      .from(table)
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(limit);
+
+    if (!error) return { data, table };
+    lastError = error;
+    if (!isTableNotFoundError(error)) throw error;
+  }
+
+  throw lastError || new Error("History table not found");
+}
+
+async function insertHistoryRow(record) {
+  let lastError;
+
+  for (const table of HISTORY_TABLES) {
+    const { error } = await supabase.from(table).insert([record]);
+    if (!error) return table;
+    lastError = error;
+    if (!isTableNotFoundError(error)) throw error;
+  }
+
+  throw lastError || new Error("History table not found");
+}
+
 function GradeCard({ grade, score }) {
   const g = grade?.toLowerCase();
   const info = g && ECO_GRADES[g];
@@ -201,8 +239,12 @@ export default function Scanner() {
 async function loadHistory() {
   setHistoryLoading(true);
   try {
-    const items = await db.entities.ScanHistory.list("-created_at", 50);
-    setHistory(items || []);
+    const { data } = await selectHistoryRows(50);
+
+    setHistory((data || []).map(item => ({
+      ...item,
+      created_date: item.created_date ?? item.created_at,
+    })));
   } catch (err) {
     console.error("History refresh failed:", err);
   } finally {
@@ -269,7 +311,7 @@ async function lookupBarcode(barcode) {
     const result = { ...p, barcode };
     setProduct(result);
 
-    await db.entities.ScanHistory.create({
+    await insertHistoryRow({
       barcode: barcode,
       product_name: p.product_name || "Unknown Product",
       brands: p.brands || "",
