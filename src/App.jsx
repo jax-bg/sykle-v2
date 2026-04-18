@@ -5,6 +5,7 @@ import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
+import ProtectedRoute from '@/components/ProtectedRoute';
 import Layout from './components/Layout';
 // Add page imports here
 import Garden from './pages/Garden';
@@ -13,6 +14,7 @@ import Plant from './pages/Plant';
 import Oasis from './pages/Oasis';
 import Harvest from './pages/Harvest';
 import Glean from './pages/Glean';
+import SecurePage from './pages/SecurePage';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -34,6 +36,25 @@ const AuthenticatedApp = () => {
     }
   }
 
+  const auth = useAuth();
+  const authMessage = (
+    <div className="max-w-2xl mx-auto px-6 py-10">
+      <div className="rounded-3xl border border-border bg-card p-8 text-center shadow-sm">
+        <h2 className="text-2xl font-semibold mb-4">Sign in required</h2>
+        <p className="text-muted-foreground mb-6">
+          You must sign in before viewing this page.
+        </p>
+        <button
+          type="button"
+          onClick={auth.navigateToLogin}
+          className="inline-flex items-center justify-center rounded-2xl bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
+        >
+          Sign in
+        </button>
+      </div>
+    </div>
+  );
+
   return (
     <Routes>
       <Route element={<Layout />}>
@@ -43,6 +64,9 @@ const AuthenticatedApp = () => {
         <Route path="/oasis" element={<Oasis />} />
         <Route path="/harvest" element={<Harvest />} />
         <Route path="/glean" element={<Glean />} />
+        <Route element={<ProtectedRoute unauthenticatedElement={authMessage} />}>
+          <Route path="/secure" element={<SecurePage />} />
+        </Route>
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>

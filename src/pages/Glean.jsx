@@ -93,7 +93,10 @@ async function selectHistoryRows(limit = 50) {
 async function insertHistoryRow(record) {
   let lastError;
   const userId = await getCurrentUserId();
-  const payload = userId ? { ...record, user_id: userId } : record;
+  if (!userId) {
+    throw new Error("Not authenticated: history requires a signed-in user.");
+  }
+  const payload = { ...record, user_id: userId };
 
   for (const table of HISTORY_TABLES) {
     const { error } = await supabase.from(table).insert([payload]);
