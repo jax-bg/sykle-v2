@@ -1,5 +1,7 @@
 const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
 
+import { supabase } from '../lib/supabase';
+
 import React, { createContext, useState, useContext, useEffect } from 'react';
 
 import { appParams } from '@/lib/app-params';
@@ -13,7 +15,7 @@ export const AuthProvider = ({ children }) => {
   const [isLoadingPublicSettings, setIsLoadingPublicSettings] = useState(true);
   const [authError, setAuthError] = useState(null);
   const [authChecked, setAuthChecked] = useState(false);
-  const [appPublicSettings, setAppPublicSettings] = useState(null); // Contains only { id, public_settings }
+  const [appPublicSettings, setAppPublicSettings] = useState(null);
 
   useEffect(() => {
     checkAppState();
@@ -24,22 +26,15 @@ export const AuthProvider = ({ children }) => {
       setIsLoadingPublicSettings(true);
       setAuthError(null);
       
-      // First, check app public settings (with token if available)
-      // This will tell us if auth is required, user not registered, etc.
-      const appClient = createAxiosClient({
-        baseURL: `/api/apps/public`,
-        headers: {
-          'X-App-Id': appParams.appId
-        },
-        token: appParams.token, // Include token if available
-        interceptResponses: true
-      });
+     const { data, error } = await supabase.auth.signInWithPassword({
+  email: email,
+  password: password,
+});
       
       try {
         const publicSettings = await appClient.get(`/prod/public-settings/by-id/${appParams.appId}`);
         setAppPublicSettings(publicSettings);
         
-        // If we got the app public settings successfully, check if user is authenticated
         if (appParams.token) {
           await checkUserAuth();
         } else {
@@ -51,7 +46,7 @@ export const AuthProvider = ({ children }) => {
       } catch (appError) {
         console.error('App state check failed:', appError);
         
-        // Handle app-level errors
+
         if (appError.status === 403 && appError.data?.extra_data?.reason) {
           const reason = appError.data.extra_data.reason;
           if (reason === 'auth_required') {
