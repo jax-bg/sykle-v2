@@ -9,7 +9,6 @@ const navItems = [
   { path: "/oasis", label: "Oasis", icon: MapPin },
   { path: "/harvest", label: "Harvest", icon: Gift },
   { path: "/glean", label: "Glean", icon: ScanLine },
-  { path: "/secure", label: "Secure", icon: ShieldCheck },
 ];
 
 export default function Layout() {
