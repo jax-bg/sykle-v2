@@ -1,0 +1,303 @@
+const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
+
+import { useState, useEffect } from "react";
+
+import { calcPointsForEntry, formatDate, today } from "@/lib/utils";
+import { Droplets, Trash2, Plus, ChevronRight, Loader2, CheckCircle2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
+
+const WASTE_TYPES = [
+  { value: "recyclable", label: "Recyclable", emoji: "♻️" },
+  { value: "food", label: "Food Waste", emoji: "🍎" },
+  { value: "general", label: "General", emoji: "🗑️" },
+  { value: "e-waste", label: "E-Waste", emoji: "📱" },
+];
+
+const WATER_TYPES = [
+  { value: "shower", label: "Shower", emoji: "🚿" },
+  { value: "tap", label: "Tap", emoji: "🚰" },
+  { value: "dishes", label: "Dishes", emoji: "🍽️" },
+  { value: "laundry", label: "Laundry", emoji: "🧺" },
+  { value: "other", label: "Other", emoji: "💧" },
+];
+
+// Average litres per hour for each water subtype
+const WATER_RATES = {
+  shower: 480,    // ~8 L/min
+  tap: 360,       // ~6 L/min
+  dishes: 240,    // ~4 L/min
+  laundry: 300,   // ~5 L/min (per hour of machine cycle)
+  other: 360,
+};
+
+export default function Log() {
+  const [category, setCategory] = useState("waste");
+  const [subtype, setSubtype] = useState("recyclable");
+  const [amount, setAmount] = useState("");
+  const [useTime, setUseTime] = useState(false);
+  const [minutes, setMinutes] = useState("");
+  const [notes, setNotes] = useState("");
+  const [entryDate, setEntryDate] = useState(today());
+  const [submitting, setSubmitting] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [entries, setEntries] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  async function loadData() {
+    setLoading(true);
+    const [me, logs] = await Promise.all([
+      db.auth.me(),
+      db.entities.LogEntry.list("-entry_date", 30),
+    ]);
+    setUser(me);
+    setEntries(logs);
+    setLoading(false);
+  }
+
+  const computedAmount = useTime && category === "water" && minutes
+    ? parseFloat((parseFloat(minutes) / 60 * WATER_RATES[subtype]).toFixed(1))
+    : parseFloat(amount);
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    if (isNaN(computedAmount) || computedAmount <= 0) return;
+    setSubmitting(true);
+    const pts = calcPointsForEntry(category, subtype, computedAmount);
+    await db.entities.LogEntry.create({
+      category,
+      subtype,
+      amount: computedAmount,
+      unit: category === "water" ? "L" : "kg",
+      notes,
+      entry_date: entryDate,
+      points_earned: pts,
+    });
+    // Update user points
+    const newPoints = (user?.points || 0) + pts;
+    const newLifetime = (user?.lifetime_points || 0) + pts;
+    const lastDate = user?.last_log_date;
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yStr = yesterday.toISOString().split("T")[0];
+    const streak = lastDate === yStr || lastDate === today()
+      ? (user?.current_streak || 0) + (lastDate !== today() ? 1 : 0)
+      : 1;
+    await db.auth.updateMe({
+      points: newPoints,
+      lifetime_points: newLifetime,
+      current_streak: streak,
+      last_log_date: today(),
+    });
+    setAmount("");
+    setMinutes("");
+    setNotes("");
+    setSuccess(true);
+    setTimeout(() => setSuccess(false), 2500);
+    await loadData();
+    setSubmitting(false);
+  }
+
+  const subtypes = category === "water" ? WATER_TYPES : WASTE_TYPES;
+
+  return (
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <div className="bg-gradient-to-br from-primary to-[hsl(178,60%,20%)] text-primary-foreground px-6 pt-10 pb-8">
+        <div className="max-w-2xl mx-auto">
+          <h1 className="font-display text-3xl font-semibold">Log Entry</h1>
+          <p className="text-primary-foreground/60 text-sm mt-1">Track your usage & earn points</p>
+        </div>
+      </div>
+
+      <div className="max-w-2xl mx-auto px-6 py-6">
+        {/* Form */}
+        <div className="bg-card border border-border/60 rounded-2xl shadow-sm p-6 mb-8">
+          <form onSubmit={handleSubmit} className="space-y-5">
+            {/* Category Toggle */}
+            <div>
+              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2 block">Category</label>
+              <div className="grid grid-cols-2 gap-2">
+                {[{ v: "waste", label: "Waste", emoji: "🗑️" }, { v: "water", label: "Water", emoji: "💧" }].map(({ v, label, emoji }) => (
+                  <button
+                    key={v}
+                    type="button"
+                    onClick={() => { setCategory(v); setSubtype(v === "water" ? "shower" : "recyclable"); }}
+                    className={cn(
+                      "flex items-center justify-center gap-2 py-3 rounded-xl font-medium text-sm border transition-all",
+                      category === v
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "bg-muted border-transparent text-muted-foreground hover:bg-secondary"
+                    )}
+                  >
+                    <span>{emoji}</span> {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Subtype */}
+            <div>
+              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2 block">Type</label>
+              <div className="grid grid-cols-2 gap-2">
+                {subtypes.map(({ value, label, emoji }) => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => setSubtype(value)}
+                    className={cn(
+                      "flex items-center gap-2 px-4 py-3 rounded-xl text-sm border transition-all",
+                      subtype === value
+                        ? "bg-teal-light border-primary text-primary font-medium"
+                        : "border-border bg-background text-foreground hover:bg-muted"
+                    )}
+                  >
+                    <span>{emoji}</span> {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Amount */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                  {category === "water" ? (useTime ? "Duration" : "Amount (Litres)") : "Amount (Kilograms)"}
+                </label>
+                {category === "water" && (
+                  <button
+                    type="button"
+                    onClick={() => { setUseTime(t => !t); setAmount(""); setMinutes(""); }}
+                    className="text-xs text-primary font-medium hover:underline"
+                  >
+                    {useTime ? "Enter litres instead" : "⏱ Use time instead"}
+                  </button>
+                )}
+              </div>
+
+              {category === "water" && useTime ? (
+                <div className="space-y-2">
+                  <div className="relative">
+                    <Input
+                      type="number"
+                      step="1"
+                      min="0"
+                      value={minutes}
+                      onChange={e => setMinutes(e.target.value)}
+                      placeholder="e.g. 10"
+                      className="pr-16 h-12 text-base rounded-xl"
+                      required
+                    />
+                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">mins</span>
+                  </div>
+                  {minutes && !isNaN(parseFloat(minutes)) && (
+                    <p className="text-xs text-muted-foreground px-1">
+                      ≈ <strong>{(parseFloat(minutes) / 60 * WATER_RATES[subtype]).toFixed(1)} L</strong> used
+                      &nbsp;(avg {WATER_RATES[subtype]} L/hr for {WATER_TYPES.find(t => t.value === subtype)?.label})
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <div className="relative">
+                  <Input
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    value={amount}
+                    onChange={e => setAmount(e.target.value)}
+                    placeholder={category === "water" ? "e.g. 80" : "e.g. 0.5"}
+                    className="pr-12 h-12 text-base rounded-xl"
+                    required
+                  />
+                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                    {category === "water" ? "L" : "kg"}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Date */}
+            <div>
+              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2 block">Date</label>
+              <Input
+                type="date"
+                value={entryDate}
+                max={today()}
+                onChange={e => setEntryDate(e.target.value)}
+                className="h-12 rounded-xl"
+              />
+            </div>
+
+            {/* Notes */}
+            <div>
+              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2 block">Notes (optional)</label>
+              <Input
+                value={notes}
+                onChange={e => setNotes(e.target.value)}
+                placeholder="Any additional info..."
+                className="h-12 rounded-xl"
+              />
+            </div>
+
+            {/* Points preview */}
+            {!isNaN(computedAmount) && computedAmount > 0 && (
+              <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+                <span className="text-lg">⭐</span>
+                <p className="text-sm text-amber-800">
+                  You'll earn <strong>{calcPointsForEntry(category, subtype, computedAmount)} points</strong> for this entry!
+                </p>
+              </div>
+            )}
+
+            <Button
+              type="submit"
+              disabled={submitting || isNaN(computedAmount) || computedAmount <= 0}
+              className="w-full h-12 rounded-xl text-base font-semibold"
+            >
+              {submitting ? <Loader2 size={18} className="animate-spin mr-2" /> : success ? <CheckCircle2 size={18} className="mr-2" /> : <Plus size={18} className="mr-2" />}
+              {submitting ? "Saving…" : success ? "Saved!" : "Log Entry"}
+            </Button>
+          </form>
+        </div>
+
+        {/* History */}
+        <h2 className="font-display text-xl font-semibold mb-4">Recent History</h2>
+        {loading ? (
+          <div className="flex justify-center py-12"><Loader2 className="animate-spin text-muted-foreground" /></div>
+        ) : entries.length === 0 ? (
+          <div className="text-center py-12 text-muted-foreground">
+            <p className="text-3xl mb-2">📋</p>
+            <p>No entries yet. Start logging!</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {entries.map(entry => (
+              <div key={entry.id} className="bg-card border border-border/60 rounded-2xl px-5 py-4 flex items-center gap-4">
+                <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center text-xl">
+                  {entry.category === "water" ? "💧" :
+                    entry.subtype === "recyclable" ? "♻️" :
+                    entry.subtype === "food" ? "🍎" :
+                    entry.subtype === "e-waste" ? "📱" : "🗑️"}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-sm capitalize">{entry.subtype?.replace("-", " ")} {entry.category}</p>
+                  <p className="text-xs text-muted-foreground">{formatDate(entry.entry_date)}</p>
+                </div>
+                <div className="text-right">
+                  <p className="font-semibold text-sm">{entry.amount} {entry.unit}</p>
+                  <p className="text-xs text-gold font-medium">+{entry.points_earned} pts</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

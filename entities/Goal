@@ -1,0 +1,59 @@
+{
+  "name": "Goal",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "water",
+        "waste",
+        "recycling"
+      ]
+    },
+    "target_amount": {
+      "type": "number",
+      "description": "Target value (lower-is-better for water/waste, higher for recycling)"
+    },
+    "unit": {
+      "type": "string",
+      "enum": [
+        "L",
+        "kg",
+        "entries"
+      ]
+    },
+    "period": {
+      "type": "string",
+      "enum": [
+        "weekly",
+        "monthly"
+      ],
+      "default": "weekly"
+    },
+    "direction": {
+      "type": "string",
+      "enum": [
+        "reduce",
+        "increase"
+      ],
+      "default": "reduce"
+    },
+    "start_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "active": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": [
+    "title",
+    "category",
+    "target_amount",
+    "period"
+  ]
+}

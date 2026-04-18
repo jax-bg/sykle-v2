@@ -1,0 +1,23 @@
+{
+  "name": "Redemption",
+  "type": "object",
+  "properties": {
+    "reward_id": {
+      "type": "string"
+    },
+    "reward_title": {
+      "type": "string"
+    },
+    "points_spent": {
+      "type": "number"
+    },
+    "code": {
+      "type": "string",
+      "description": "Generated redemption code"
+    }
+  },
+  "required": [
+    "reward_id",
+    "points_spent"
+  ]
+}

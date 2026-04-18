@@ -1,0 +1,57 @@
+{
+  "name": "LogEntry",
+  "type": "object",
+  "properties": {
+    "category": {
+      "type": "string",
+      "enum": [
+        "water",
+        "waste"
+      ],
+      "description": "Type of entry"
+    },
+    "subtype": {
+      "type": "string",
+      "enum": [
+        "recyclable",
+        "food",
+        "general",
+        "e-waste",
+        "shower",
+        "tap",
+        "dishes",
+        "laundry",
+        "other"
+      ],
+      "description": "More specific classification"
+    },
+    "amount": {
+      "type": "number",
+      "description": "Liters for water, kg for waste"
+    },
+    "unit": {
+      "type": "string",
+      "enum": [
+        "L",
+        "kg"
+      ]
+    },
+    "notes": {
+      "type": "string"
+    },
+    "entry_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "points_earned": {
+      "type": "number",
+      "default": 0
+    }
+  },
+  "required": [
+    "category",
+    "subtype",
+    "amount",
+    "entry_date"
+  ]
+}

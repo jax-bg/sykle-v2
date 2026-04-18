@@ -1,0 +1,44 @@
+{
+  "name": "Reward",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "partner": {
+      "type": "string",
+      "description": "e.g. Carrefour, ADNOC, Emirates NBD"
+    },
+    "points_cost": {
+      "type": "number"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "voucher",
+        "donation",
+        "experience",
+        "discount"
+      ]
+    },
+    "emoji": {
+      "type": "string",
+      "default": "\ud83c\udf81"
+    },
+    "stock": {
+      "type": "number",
+      "default": 100
+    },
+    "featured": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "required": [
+    "title",
+    "points_cost"
+  ]
+}

@@ -1,0 +1,58 @@
+{
+  "name": "DisposalSite",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "emirate": {
+      "type": "string",
+      "enum": [
+        "Abu Dhabi",
+        "Dubai",
+        "Sharjah",
+        "Ajman",
+        "Ras Al Khaimah",
+        "Fujairah",
+        "Umm Al Quwain"
+      ]
+    },
+    "address": {
+      "type": "string"
+    },
+    "types_accepted": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "recyclable",
+          "e-waste",
+          "plastic",
+          "glass",
+          "paper",
+          "metal",
+          "organic",
+          "hazardous",
+          "clothes"
+        ]
+      }
+    },
+    "latitude": {
+      "type": "number"
+    },
+    "longitude": {
+      "type": "number"
+    },
+    "hours": {
+      "type": "string"
+    },
+    "phone": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "name",
+    "latitude",
+    "longitude"
+  ]
+}

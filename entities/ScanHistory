@@ -1,0 +1,33 @@
+{
+  "name": "ScanHistory",
+  "type": "object",
+  "properties": {
+    "barcode": {
+      "type": "string"
+    },
+    "product_name": {
+      "type": "string"
+    },
+    "brands": {
+      "type": "string"
+    },
+    "ecoscore_grade": {
+      "type": "string"
+    },
+    "ecoscore_score": {
+      "type": "number"
+    },
+    "image_url": {
+      "type": "string"
+    },
+    "origins": {
+      "type": "string"
+    },
+    "packaging": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "barcode"
+  ]
+}

@@ -1,0 +1,89 @@
+import { Outlet, NavLink, useLocation } from "react-router-dom";
+import { Home, ClipboardList, Target, MapPin, Gift, ScanLine } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+const navItems = [
+  { path: "/", label: "Home", icon: Home },
+  { path: "/log", label: "Log", icon: ClipboardList },
+  { path: "/goals", label: "Goals", icon: Target },
+  { path: "/map", label: "Map", icon: MapPin },
+  { path: "/rewards", label: "Rewards", icon: Gift },
+  { path: "/scanner", label: "Scanner", icon: ScanLine },
+];
+
+export default function Layout() {
+  return (
+    <div className="flex min-h-screen bg-background">
+      {/* Desktop Sidebar */}
+      <aside className="hidden md:flex flex-col w-64 bg-sidebar min-h-screen fixed left-0 top-0 z-30">
+        <div className="p-6 border-b border-sidebar-border">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-sidebar-primary flex items-center justify-center">
+              <span className="text-lg">🌿</span>
+            </div>
+            <div>
+              <p className="font-display font-semibold text-sidebar-foreground text-lg leading-tight">EcoJourney</p>
+              <p className="text-xs text-sidebar-foreground/50">UAE</p>
+            </div>
+          </div>
+        </div>
+        <nav className="flex-1 p-4 space-y-1">
+          {navItems.map(({ path, label, icon: Icon }) => (
+            <NavLink
+              key={path}
+              to={path}
+              end={path === "/"}
+              className={({ isActive }) =>
+                cn(
+                  "flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all",
+                  isActive
+                    ? "bg-sidebar-primary text-sidebar-primary-foreground"
+                    : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                )
+              }
+            >
+              <Icon size={18} />
+              {label}
+            </NavLink>
+          ))}
+        </nav>
+        <div className="p-4 border-t border-sidebar-border">
+          <p className="text-xs text-sidebar-foreground/40 text-center">For a greener UAE 🇦🇪</p>
+        </div>
+      </aside>
+
+      {/* Main content */}
+      <main className="flex-1 md:ml-64 pb-24 md:pb-0 min-h-screen">
+        <Outlet />
+      </main>
+
+      {/* Mobile Bottom Nav */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-border shadow-xl">
+        <div className="flex items-center justify-around py-2 pb-safe">
+          {navItems.map(({ path, label, icon: Icon }) => (
+            <NavLink
+              key={path}
+              to={path}
+              end={path === "/"}
+              className={({ isActive }) =>
+                cn(
+                  "flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl transition-all",
+                  isActive ? "text-primary" : "text-muted-foreground"
+                )
+              }
+            >
+              {({ isActive }) => (
+                <>
+                  <div className={cn("p-1.5 rounded-lg transition-all", isActive && "bg-teal-light")}>
+                    <Icon size={20} />
+                  </div>
+                  <span className="text-[10px] font-medium">{label}</span>
+                </>
+              )}
+            </NavLink>
+          ))}
+        </div>
+      </nav>
+    </div>
+  );
+}
