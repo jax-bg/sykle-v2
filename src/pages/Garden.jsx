@@ -121,7 +121,7 @@ export default function Home() {
           <Link to="/log" className="bg-primary text-primary-foreground rounded-2xl p-5 flex flex-col gap-2 hover:opacity-90 transition-opacity">
             <span className="text-2xl">📝</span>
             <span className="font-semibold">Log Entry</span>
-            <span className="text-xs text-primary-foreground/70">Track waste or water</span>
+            <span className="text-xs text-primary-foreground/70">Track your waste or water</span>
           </Link>
           <Link to="/plant" className="bg-card border border-border rounded-2xl p-5 flex flex-col gap-2 hover:bg-muted transition-colors">
             <span className="text-2xl">🎯</span>

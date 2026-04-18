@@ -111,8 +111,8 @@ export default function Log() {
       {/* Header */}
       <div className="bg-gradient-to-br from-primary to-[hsl(178,60%,20%)] text-primary-foreground px-6 pt-10 pb-8">
         <div className="max-w-2xl mx-auto">
-          <h1 className="font-display text-3xl font-semibold">Log Entry</h1>
-          <p className="text-primary-foreground/60 text-sm mt-1">Track your usage & earn points</p>
+          <h1 className="font-display text-3xl font-semibold">Log</h1>
+          <p className="text-primary-foreground/60 text-sm mt-1">Track your waste/water usage.</p>
         </div>
       </div>
 
@@ -248,7 +248,7 @@ export default function Log() {
             {/* Points preview */}
             {!isNaN(computedAmount) && computedAmount > 0 && (
               <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
-                <span className="text-lg">⭐</span>
+                <span className="text-lg">🌰</span>
                 <p className="text-sm text-amber-800">
                   You'll earn <strong>{calcPointsForEntry(category, subtype, computedAmount)} points</strong> for this entry!
                 </p>

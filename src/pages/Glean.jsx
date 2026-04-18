@@ -317,8 +317,8 @@ export default function Scanner() {
       {/* Header */}
       <div className="bg-gradient-to-br from-primary to-[hsl(178,60%,20%)] text-primary-foreground px-6 pt-10 pb-8">
         <div className="max-w-2xl mx-auto">
-          <h1 className="font-display text-3xl font-semibold">Eco Scanner</h1>
-          <p className="text-primary-foreground/60 text-sm mt-1">Scan a product to see its environmental impact</p>
+          <h1 className="font-display text-3xl font-semibold">Glean</h1>
+          <p className="text-primary-foreground/60 text-sm mt-1">Scan a product to see its environmental impact.</p>
         </div>
       </div>
 
