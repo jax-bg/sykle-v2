@@ -284,7 +284,6 @@ try {
 } catch (err) {
   console.error("Connection Error:", err.message);
   setError("Failed to save to history. Check your connection.");
-}
   } finally {
     setLoading(false);
   }
