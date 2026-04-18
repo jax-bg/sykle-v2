@@ -1,5 +1,4 @@
-const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
-
+import { supabase } from "@/lib/supabase";
 import { useState, useEffect } from "react";
 
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
@@ -77,17 +76,29 @@ export default function MapPage() {
   const [selected, setSelected] = useState(null);
 
   useEffect(() => {
-    async function load() {
-      let data = await db.entities.DisposalSite.list();
-      if (data.length === 0) {
-        await db.entities.DisposalSite.bulkCreate(DEFAULT_SITES);
-        data = await db.entities.DisposalSite.list();
-      }
-      setSites(data);
-      setLoading(false);
+  async function load() {
+    setLoading(true);
+    
+    // 1. Try to fetch from Supabase
+    let { data, error } = await supabase
+      .from('disposal_sites') // Your table name in Supabase
+      .select('*');
+
+    // 2. If table is empty, seed it with your defaults
+    if (!error && (!data || data.length === 0)) {
+      const { data: seededData, error: seedError } = await supabase
+        .from('disposal_sites')
+        .insert(DEFAULT_SITES)
+        .select();
+      
+      if (!seedError) data = seededData;
     }
-    load();
-  }, []);
+
+    if (data) setSites(data);
+    setLoading(false);
+  }
+  load();
+}, []);
 
   const filtered = sites.filter(s => {
     const emirateOk = filterEmirate === "All" || s.emirate === filterEmirate;
