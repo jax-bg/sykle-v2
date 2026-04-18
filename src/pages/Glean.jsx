@@ -45,23 +45,43 @@ async function fetchProduct(barcode) {
   throw lastErr || new Error("Product not found");
 }
 
-const HISTORY_TABLES = ["scan_history", "ScanHistory"];
+const HISTORY_TABLES = ["ScanHistory", "scan_history"];
 
 function isTableNotFoundError(error) {
   const msg = error?.message || "";
   return /(does not exist|relation .* does not exist|table .* does not exist)/i.test(msg);
 }
 
+async function getCurrentUserId() {
+  try {
+    const { data, error } = await supabase.auth.getUser();
+    if (error) {
+      console.warn("Supabase getUser failed:", error);
+      return null;
+    }
+    return data?.user?.id ?? null;
+  } catch (err) {
+    console.warn("Supabase getUser unexpected error:", err);
+    return null;
+  }
+}
+
 async function selectHistoryRows(limit = 50) {
   let lastError;
+  const userId = await getCurrentUserId();
 
   for (const table of HISTORY_TABLES) {
-    const { data, error } = await supabase
+    let query = supabase
       .from(table)
       .select("*")
       .order("created_at", { ascending: false })
       .limit(limit);
 
+    if (userId) {
+      query = query.eq("user_id", userId);
+    }
+
+    const { data, error } = await query;
     if (!error) return { data, table };
     lastError = error;
     if (!isTableNotFoundError(error)) throw error;
@@ -72,9 +92,11 @@ async function selectHistoryRows(limit = 50) {
 
 async function insertHistoryRow(record) {
   let lastError;
+  const userId = await getCurrentUserId();
+  const payload = userId ? { ...record, user_id: userId } : record;
 
   for (const table of HISTORY_TABLES) {
-    const { error } = await supabase.from(table).insert([record]);
+    const { error } = await supabase.from(table).insert([payload]);
     if (!error) return table;
     lastError = error;
     if (!isTableNotFoundError(error)) throw error;
@@ -247,6 +269,7 @@ async function loadHistory() {
     })));
   } catch (err) {
     console.error("History refresh failed:", err);
+    setError("Failed to load history: " + (err?.message || err));
   } finally {
     setHistoryLoading(false);
   }
@@ -325,8 +348,8 @@ async function lookupBarcode(barcode) {
     await loadHistory();
     
   } catch (err) {
-    console.error("Connection Error:", err.message);
-    setError("Failed to save to history. Check your connection.");
+    console.error("History save failed:", err);
+    setError("Failed to save to history: " + (err?.message || err));
   } finally {
     setLoading(false);
   }
@@ -378,7 +401,7 @@ async function lookupBarcode(barcode) {
           {[{ id: "scan", label: "Scanner", icon: Camera }, { id: "history", label: "History", icon: History }].map(({ id, label, icon: Icon }) => (
             <button
               key={id}
-              onClick={() => { setTab(id); if (id === "scan") reset(); }}
+              onClick={() => setTab(id)}
               className={cn(
                 "flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-all",
                 tab === id ? "bg-card shadow text-foreground" : "text-muted-foreground hover:text-foreground"
