@@ -79,22 +79,17 @@ export default function MapPage() {
   async function load() {
     setLoading(true);
     
-    // 1. Try to fetch from Supabase
-    let { data, error } = await supabase
-      .from('disposal_sites') // Your table name in Supabase
+    // Just fetch the data you already added to Supabase
+    const { data, error } = await supabase
+      .from('disposal_sites')
       .select('*');
 
-    // 2. If table is empty, seed it with your defaults
-    if (!error && (!data || data.length === 0)) {
-      const { data: seededData, error: seedError } = await supabase
-        .from('disposal_sites')
-        .insert(DEFAULT_SITES)
-        .select();
-      
-      if (!seedError) data = seededData;
+    if (error) {
+      console.error("Error fetching sites:", error);
+    } else if (data) {
+      setSites(data);
     }
-
-    if (data) setSites(data);
+    
     setLoading(false);
   }
   load();
