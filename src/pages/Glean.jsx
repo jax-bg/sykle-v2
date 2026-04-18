@@ -1,5 +1,4 @@
-const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
-
+import { supabase as db } from "@/lib/supabase";
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Camera, Search, X, Loader2, AlertCircle, RefreshCw, History, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -255,35 +254,32 @@ export default function Scanner() {
     animRef.current = requestAnimationFrame(scanFrame);
   }, []);
 
-  async function lookupBarcode(barcode) {
+async function lookupBarcode(barcode) {
   setLoading(true);
   setError(null);
   setProduct(null);
- 
-try {
-  const p = await fetchProduct(barcode);
-  const result = { ...p, barcode };
-  setProduct(result);
+  setMode("idle"); // Ensure scanner UI resets
+  
+  try {
+    const p = await fetchProduct(barcode);
+    const result = { ...p, barcode };
+    setProduct(result);
 
-  const { error: dbError } = await supabase
-    .from('ScanHistory')
-    .insert([{
+    await db.entities.ScanHistory.create({
       barcode: barcode,
-      product_name: p.product_name || "",
+      product_name: p.product_name || "Unknown Product",
       brands: p.brands || "",
       ecoscore_grade: p.ecoscore_grade || "",
       ecoscore_score: p.ecoscore_score ?? null,
       image_url: p.image_front_url || "",
       origins: p.origins_tags?.slice(0, 1).map(t => t.replace("en:", "").replace(/-/g, " ")).join(", ") || "",
       packaging: p.packaging_tags?.slice(0, 2).map(t => t.replace("en:", "").replace(/-/g, " ")).join(", ") || "",
-    }]);
+    });
 
-  if (dbError) throw dbError; // Catch database-specific errors
-
-  await loadHistory();
-} catch (err) {
-  console.error("Connection Error:", err.message);
-  setError("Failed to save to history. Check your connection.");
+    await loadHistory();
+  } catch (err) {
+    console.error("Connection Error:", err.message);
+    setError("Failed to save to history. Check your connection.");
   } finally {
     setLoading(false);
   }
