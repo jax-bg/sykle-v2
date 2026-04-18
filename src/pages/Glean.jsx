@@ -23,8 +23,35 @@ const TIPS = {
   e: "Very high environmental impact. We recommend choosing a greener product.",
 };
 
+const ECOSCORE_ADJUSTMENT_LABELS = {
+  packaging: "Packaging",
+  origins: "Origin",
+  production_system: "Production system",
+  ingredients: "Ingredients quality",
+  additives: "Additives",
+  labels: "Environmental labels",
+  no_environment_labels: "No environmental labels",
+  air_transportation: "Air transportation",
+  threatened_species: "Threatened species",
+  water_use: "Water use",
+  score: "Score",
+};
+
+function formatEcoscoreAdjustment(value) {
+  if (value == null) return "Unknown";
+  if (typeof value === "string") return value;
+  if (typeof value === "number") return String(value);
+  if (Array.isArray(value)) return value.map(v => formatEcoscoreAdjustment(v)).join(", ");
+  if (typeof value === "object") {
+    if (value.value) return String(value.value);
+    if (value.label) return String(value.label);
+    return Object.values(value).map(v => formatEcoscoreAdjustment(v)).filter(Boolean).join(", ");
+  }
+  return String(value);
+}
+
 async function fetchProduct(barcode) {
-  const fields = "product_name,ecoscore_grade,ecoscore_score,image_front_url,brands,packaging_tags,origins_tags";
+  const fields = "product_name,ecoscore_grade,ecoscore_score,image_front_url,brands,packaging_tags,origins_tags,ingredients_text,nova_group,labels_tags,categories_tags,countries_tags,ecoscore_data";
   // Try multiple endpoints for reliability
   const urls = [
     `https://world.openfoodfacts.org/api/v2/product/${barcode}?fields=${fields}`,
@@ -138,6 +165,13 @@ function GradeCard({ grade, score }) {
 function ProductCard({ product, onScanAnother }) {
   const origins = product.origins_tags?.slice(0, 1).map(t => t.replace("en:", "").replace(/-/g, " ")).join(", ");
   const packaging = product.packaging_tags?.slice(0, 2).map(t => t.replace("en:", "").replace(/-/g, " ")).join(", ");
+  const ingredients = product.ingredients_text;
+  const labels = product.labels_tags?.slice(0, 4).map(t => t.replace(/^en:/, "").replace(/_/g, " "));
+  const categories = product.categories_tags?.slice(0, 4).map(t => t.replace(/^en:/, "").replace(/_/g, " "));
+  const countries = product.countries_tags?.slice(0, 3).map(t => t.replace(/^en:/, "").replace(/_/g, " "));
+  const agribalyseScore = product.ecoscore_data?.agribalyse?.score;
+  const adjustments = product.ecoscore_data?.adjustments || {};
+  const adjustmentEntries = Object.entries(adjustments).filter(([, value]) => value != null && value !== "" && !(Array.isArray(value) && value.length === 0));
 
   return (
     <div className="space-y-4 animate-slide-up">
@@ -177,6 +211,52 @@ function ProductCard({ product, onScanAnother }) {
                 <p className="text-sm font-medium capitalize">{packaging}</p>
               </div>
             )}
+          </div>
+        )}
+
+        {(adjustmentEntries.length > 0 || agribalyseScore != null || ingredients || labels?.length || categories?.length || countries?.length) && (
+          <div className="px-5 pb-5 space-y-4">
+            <div className="bg-muted rounded-2xl p-5">
+              <p className="text-sm font-semibold mb-3">Eco-Score details from Open Food Facts</p>
+              <div className="grid gap-3">
+                {agribalyseScore != null && (
+                  <div className="bg-card border border-border/60 rounded-xl p-3">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Agribalyse score</p>
+                    <p className="text-sm font-medium">{agribalyseScore}</p>
+                  </div>
+                )}
+                {adjustmentEntries.map(([key, value]) => (
+                  <div key={key} className="bg-card border border-border/60 rounded-xl p-3">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">{ECOSCORE_ADJUSTMENT_LABELS[key] ?? key.replace(/_/g, " ")}</p>
+                    <p className="text-sm font-medium">{formatEcoscoreAdjustment(value)}</p>
+                  </div>
+                ))}
+                {ingredients && (
+                  <div className="bg-card border border-border/60 rounded-xl p-3">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Ingredients</p>
+                    <p className="text-sm leading-snug">{ingredients}</p>
+                  </div>
+                )}
+                {labels?.length > 0 && (
+                  <div className="bg-card border border-border/60 rounded-xl p-3">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Labels</p>
+                    <p className="text-sm font-medium">{labels.join(", ")}</p>
+                  </div>
+                )}
+                {categories?.length > 0 && (
+                  <div className="bg-card border border-border/60 rounded-xl p-3">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Categories</p>
+                    <p className="text-sm font-medium">{categories.join(", ")}</p>
+                  </div>
+                )}
+                {countries?.length > 0 && (
+                  <div className="bg-card border border-border/60 rounded-xl p-3">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Countries</p>
+                    <p className="text-sm font-medium">{countries.join(", ")}</p>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         )}
       </div>
