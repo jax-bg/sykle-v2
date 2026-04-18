@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import { getLevelInfo, today } from "@/lib/utils";
 import LevelRing from "@/components/LevelRing";
 import StatCard from "@/components/StatCard";
+import { useAuth } from "@/lib/AuthContext";
 import { Flame, Droplets, Trash2, Recycle, Star } from "lucide-react";
 import { Link } from "react-router-dom";
 
@@ -19,6 +20,7 @@ const tips = [
 ];
 
 export default function Home() {
+  const { isAuthenticated, navigateToLogin, logout } = useAuth();
   const [user, setUser] = useState(null);
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -72,6 +74,21 @@ export default function Home() {
               <Star size={16} className="text-gold fill-gold" />
               <span className="font-bold text-lg">{(user?.points || 0).toLocaleString()}</span>
               <span className="text-xs text-primary-foreground/60">Seeds</span>
+              {isAuthenticated ? (
+                <button
+                  onClick={() => logout(false)}
+                  className="ml-3 rounded-full bg-secondary/90 px-3 py-1 text-xs font-semibold text-white transition hover:opacity-90"
+                >
+                  Sign out
+                </button>
+              ) : (
+                <button
+                  onClick={navigateToLogin}
+                  className="ml-3 rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground transition hover:opacity-90"
+                >
+                  Sign in
+                </button>
+              )}
             </div>
           </div>
 
