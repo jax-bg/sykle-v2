@@ -37,12 +37,12 @@ const AuthenticatedApp = () => {
   return (
     <Routes>
       <Route element={<Layout />}>
-        <Route path="/" element={<Home />} />
+        <Route path="/" element={<Garden />} />
         <Route path="/log" element={<Log />} />
-        <Route path="/goals" element={<Goals />} />
-        <Route path="/map" element={<MapPage />} />
-        <Route path="/rewards" element={<Rewards />} />
-        <Route path="/scanner" element={<Scanner />} />
+        <Route path="/plant" element={<Plant />} />
+        <Route path="/oasis" element={<Oasis />} />
+        <Route path="/harvest" element={<Harvest />} />
+        <Route path="/glean" element={<Glean />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>
