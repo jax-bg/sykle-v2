@@ -60,7 +60,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   const signInWithGoogle = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
+    const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
         redirectTo: `${window.location.origin}/login`
@@ -69,6 +69,10 @@ export const AuthProvider = ({ children }) => {
 
     if (error) {
       throw error;
+    }
+
+    if (data?.url) {
+      window.location.href = data.url;
     }
   };
 

@@ -12,7 +12,11 @@ export default function Login() {
 
   useEffect(() => {
     const handleRedirect = async () => {
-      if (window.location.search.includes("access_token") || window.location.search.includes("type=success")) {
+      if (
+        window.location.search.includes("access_token") ||
+        window.location.search.includes("type=success") ||
+        window.location.hash.includes("access_token")
+      ) {
         try {
           const { error: urlError } = await supabase.auth.getSessionFromUrl({ storeSession: true });
           if (urlError) {

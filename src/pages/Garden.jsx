@@ -7,7 +7,7 @@ import LevelRing from "@/components/LevelRing";
 import StatCard from "@/components/StatCard";
 import { useAuth } from "@/lib/AuthContext";
 import { Flame, Droplets, Trash2, Recycle, Star } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 const tips = [
   "Turn off the tap while brushing to save water.",
@@ -20,7 +20,8 @@ const tips = [
 ];
 
 export default function Home() {
-  const { isAuthenticated, navigateToLogin, logout } = useAuth();
+  const navigate = useNavigate();
+  const { isAuthenticated, logout } = useAuth();
   const [user, setUser] = useState(null);
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -83,7 +84,7 @@ export default function Home() {
                 </button>
               ) : (
                 <button
-                  onClick={navigateToLogin}
+                  onClick={() => navigate("/login")}
                   className="ml-3 rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground transition hover:opacity-90"
                 >
                   Sign in
