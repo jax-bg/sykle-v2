@@ -110,7 +110,6 @@ export default function Log() {
         category,
         subtype,
         amount: computedAmount,
-        unit: category === "water" ? "L" : "kg",
         entry_date: entryDate,
       }
     ]);
@@ -373,7 +372,7 @@ export default function Log() {
                   <p className="text-xs text-muted-foreground">{formatDate(entry.entry_date)}</p>
                 </div>
                 <div className="text-right">
-                  <p className="font-semibold text-sm">{entry.amount} {entry.unit}</p>
+                  <p className="font-semibold text-sm">{entry.amount} {entry.category === "water" ? "L" : "kg"}</p>
                 </div>
               </div>
             ))}
