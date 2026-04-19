@@ -40,7 +40,6 @@ export default function Log() {
   const [useTime, setUseTime] = useState(false);
   const [timeValue, setTimeValue] = useState("");
   const [timeUnit, setTimeUnit] = useState("minutes");
-  const [notes, setNotes] = useState("");
   const [entryDate, setEntryDate] = useState(today());
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -112,7 +111,6 @@ export default function Log() {
         subtype,
         amount: computedAmount,
         unit: category === "water" ? "L" : "kg",
-        notes,
         entry_date: entryDate,
         points_earned: pts,
       }
@@ -159,7 +157,6 @@ export default function Log() {
     setAmount("");
     setTimeValue("");
     setTimeUnit("minutes");
-    setNotes("");
     setSuccess(true);
     setTimeout(() => setSuccess(false), 2500);
     await loadData();
@@ -325,17 +322,6 @@ export default function Log() {
                 value={entryDate}
                 max={today()}
                 onChange={e => setEntryDate(e.target.value)}
-                className="h-12 rounded-xl"
-              />
-            </div>
-
-            {/* Notes */}
-            <div>
-              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2 block">Notes (optional)</label>
-              <Input
-                value={notes}
-                onChange={e => setNotes(e.target.value)}
-                placeholder="Any additional info..."
                 className="h-12 rounded-xl"
               />
             </div>
