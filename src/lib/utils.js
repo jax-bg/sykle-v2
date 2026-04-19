@@ -1,6 +1,31 @@
 import { clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 
+export const LOG_CATEGORIES = [
+  { value: "waste", label: "Waste", emoji: "🗑️" },
+  { value: "water", label: "Water", emoji: "💧" },
+];
+
+export const WASTE_TYPES = [
+  { value: "recyclable", label: "Recyclable", emoji: "♻️" },
+  { value: "food", label: "Food Waste", emoji: "🍎" },
+  { value: "general", label: "General", emoji: "🗑️" },
+  { value: "e-waste", label: "E-Waste", emoji: "📱" },
+];
+
+export const WATER_TYPES = [
+  { value: "shower", label: "Shower", emoji: "🚿" },
+  { value: "tap", label: "Tap", emoji: "🚰" },
+  { value: "dishes", label: "Dishes", emoji: "🍽️" },
+  { value: "laundry", label: "Laundry", emoji: "🧺" },
+  { value: "other", label: "Other", emoji: "💧" },
+];
+
+export const CATEGORY_UNIT = {
+  water: "L",
+  waste: "kg",
+};
+
 export function cn(...inputs) {
   return twMerge(clsx(inputs));
 }

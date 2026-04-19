@@ -3,9 +3,9 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/AuthContext";
 
-import { getLevelInfo, today } from "@/lib/utils";
+import { getLevelInfo, LOG_CATEGORIES, WASTE_TYPES, WATER_TYPES } from "@/lib/utils";
 import LevelRing from "@/components/LevelRing";
-import { Plus, Target, Loader2, Trash2, CheckCircle2, TrendingDown, TrendingUp } from "lucide-react";
+import { Plus, Loader2, Trash2, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -31,7 +31,7 @@ export default function Goals() {
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState(null);
   const [formSuccess, setFormSuccess] = useState(null);
-  const [form, setForm] = useState({ title: "", target_value: "" });
+  const [form, setForm] = useState({ category: "water", subtype: "shower", title: "", target_value: "" });
 
   useEffect(() => {
     if (!isLoadingAuth && authChecked) {
@@ -86,10 +86,16 @@ export default function Goals() {
       return;
     }
 
+    const subtypeLabel = WASTE_TYPES.concat(WATER_TYPES).find(t => t.value === form.subtype)?.label || form.subtype;
+    const categoryLabel = LOG_CATEGORIES.find(c => c.value === form.category)?.label || form.category;
+    const goalTitle = form.title.trim() || `${subtypeLabel} ${categoryLabel}`;
+
     const { data, error } = await supabase.from('Goals').insert([
       {
         user_id: userId,
-        title: form.title,
+        title: goalTitle,
+        category: form.category,
+        subtype: form.subtype,
         target_value: targetAmount,
         current_value: 0,
         is_completed: false,
@@ -114,7 +120,7 @@ export default function Goals() {
 
     setFormSuccess('Goal created successfully!');
     setShowForm(false);
-    setForm({ title: "", target_value: "" });
+    setForm({ category: "water", subtype: "shower", title: "", target_value: "" });
     await loadData();
     setSubmitting(false);
   }
@@ -136,6 +142,7 @@ export default function Goals() {
   }
 
   const levelInfo = getLevelInfo(profile?.lifetime_points || 0);
+  const subtypeOptions = form.category === 'water' ? WATER_TYPES : WASTE_TYPES;
 
   return (
     <div className="min-h-screen bg-background">
@@ -186,7 +193,7 @@ export default function Goals() {
         {/* Goals */}
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="font-display text-xl font-semibold">My Goals</h2>
+            <h2 className="font-display text-xl font-semibold">My Plants</h2>
             {formSuccess && <p className="text-sm text-green-600 mt-1">{formSuccess}</p>}
           </div>
           <Button
@@ -206,13 +213,63 @@ export default function Goals() {
         {showForm && (
           <div className="bg-card border border-border/60 rounded-2xl p-5 mb-5 shadow-sm">
             <form onSubmit={handleCreate} className="space-y-4">
-              <div>
-                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1.5 block">Goal Name</label>
-                <Input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="e.g. Reduce shower water" required className="rounded-xl h-11" />
-              </div>
-                <div className="grid grid-cols-1 gap-3">
+              <div className="grid gap-4 md:grid-cols-2">
                 <div>
-                  <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1.5 block">Target Value</label>
+                  <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1.5 block">Category</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {LOG_CATEGORIES.map(cat => (
+                      <button
+                        key={cat.value}
+                        type="button"
+                        onClick={() => setForm(f => ({ ...f, category: cat.value, subtype: cat.value === 'water' ? 'shower' : 'recyclable' }))}
+                        className={cn(
+                          "flex items-center justify-center gap-2 py-3 rounded-xl font-medium text-sm border transition-all",
+                          form.category === cat.value
+                            ? "bg-primary text-primary-foreground border-primary"
+                            : "bg-muted border-transparent text-muted-foreground hover:bg-secondary"
+                        )}
+                      >
+                        <span>{cat.emoji}</span> {cat.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1.5 block">Type</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {(form.category === 'water' ? WATER_TYPES : WASTE_TYPES).map(typeOption => (
+                      <button
+                        key={typeOption.value}
+                        type="button"
+                        onClick={() => setForm(f => ({ ...f, subtype: typeOption.value }))}
+                        className={cn(
+                          "flex items-center gap-2 px-4 py-3 rounded-xl text-sm border transition-all",
+                          form.subtype === typeOption.value
+                            ? "bg-teal-light border-primary text-primary font-medium"
+                            : "border-border bg-background text-foreground hover:bg-muted"
+                        )}
+                      >
+                        <span>{typeOption.emoji}</span> {typeOption.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1.5 block">Goal name</label>
+                  <Input
+                    value={form.title}
+                    onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
+                    placeholder="e.g. Reduce shower water"
+                    required
+                    className="rounded-xl h-11"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1.5 block">Target value</label>
                   <Input
                     type="number"
                     min="0"
@@ -225,6 +282,7 @@ export default function Goals() {
                   />
                 </div>
               </div>
+
               <div className="flex gap-3">
                 <Button type="button" variant="outline" onClick={() => setShowForm(false)} className="flex-1 rounded-xl">Cancel</Button>
                 <Button type="submit" disabled={submitting} className="flex-1 rounded-xl">
@@ -233,7 +291,6 @@ export default function Goals() {
                 </Button>
               </div>
               {formError && <p className="text-sm text-red-600">{formError}</p>}
-              {formSuccess && <p className="text-sm text-green-600">{formSuccess}</p>}
             </form>
           </div>
         )}
@@ -252,10 +309,10 @@ export default function Goals() {
               const { total, progress } = getGoalProgress(goal);
               return (
                 <div key={goal.id} className="bg-card border border-border/60 rounded-2xl p-5 shadow-sm">
-                  <div className="flex items-start justify-between mb-3">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between mb-3">
                     <div>
                       <p className="font-semibold">{goal.title}</p>
-                      <p className="text-xs text-muted-foreground capitalize">Target: {goal.target_value}</p>
+                      <p className="text-xs text-muted-foreground capitalize">{goal.subtype} · {goal.category}</p>
                     </div>
                     <button onClick={() => deleteGoal(goal.id)} className="text-muted-foreground hover:text-destructive transition-colors p-1">
                       <Trash2 size={16} />

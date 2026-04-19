@@ -2,26 +2,11 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/AuthContext";
 
-import { calcPointsForEntry, formatDate, today } from "@/lib/utils";
+import { calcPointsForEntry, formatDate, today, LOG_CATEGORIES, WASTE_TYPES, WATER_TYPES } from "@/lib/utils";
 import { Droplets, Trash2, Plus, ChevronRight, Loader2, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-
-const WASTE_TYPES = [
-  { value: "recyclable", label: "Recyclable", emoji: "♻️" },
-  { value: "food", label: "Food Waste", emoji: "🍎" },
-  { value: "general", label: "General", emoji: "🗑️" },
-  { value: "e-waste", label: "E-Waste", emoji: "📱" },
-];
-
-const WATER_TYPES = [
-  { value: "shower", label: "Shower", emoji: "🚿" },
-  { value: "tap", label: "Tap", emoji: "🚰" },
-  { value: "dishes", label: "Dishes", emoji: "🍽️" },
-  { value: "laundry", label: "Laundry", emoji: "🧺" },
-  { value: "other", label: "Other", emoji: "💧" },
-];
 
 // Average litres per hour for each water subtype
 const WATER_RATES = {
@@ -130,6 +115,33 @@ export default function Log() {
       return;
     }
 
+    try {
+      const { data: matchingGoals, error: goalFetchError } = await supabase
+        .from('Goals')
+        .select('id,current_value,target_value,is_completed')
+        .eq('user_id', userId)
+        .eq('category', category)
+        .eq('subtype', subtype)
+        .eq('is_completed', false);
+
+      if (goalFetchError) {
+        console.error('Failed to fetch goals for update:', goalFetchError);
+      } else if (matchingGoals?.length) {
+        await Promise.all(matchingGoals.map(goal => {
+          const updatedValue = (goal.current_value || 0) + computedAmount;
+          return supabase
+            .from('Goals')
+            .update({
+              current_value: updatedValue,
+              is_completed: updatedValue >= goal.target_value,
+            })
+            .eq('id', goal.id);
+        }));
+      }
+    } catch (goalUpdateException) {
+      console.error('Unexpected error updating goals:', goalUpdateException);
+    }
+
     const newPoints = (profile?.points || 0) + pts;
     const newLifetime = (profile?.lifetime_points || 0) + pts;
     const lastDate = profile?.last_log_date;
@@ -181,14 +193,14 @@ export default function Log() {
             <div>
               <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2 block">Category</label>
               <div className="grid grid-cols-2 gap-2">
-                {[{ v: "waste", label: "Waste", emoji: "🗑️" }, { v: "water", label: "Water", emoji: "💧" }].map(({ v, label, emoji }) => (
+                {LOG_CATEGORIES.map(({ value, label, emoji }) => (
                   <button
-                    key={v}
+                    key={value}
                     type="button"
-                    onClick={() => { setCategory(v); setSubtype(v === "water" ? "shower" : "recyclable"); }}
+                    onClick={() => { setCategory(value); setSubtype(value === "water" ? "shower" : "recyclable"); }}
                     className={cn(
                       "flex items-center justify-center gap-2 py-3 rounded-xl font-medium text-sm border transition-all",
-                      category === v
+                      category === value
                         ? "bg-primary text-primary-foreground border-primary"
                         : "bg-muted border-transparent text-muted-foreground hover:bg-secondary"
                     )}

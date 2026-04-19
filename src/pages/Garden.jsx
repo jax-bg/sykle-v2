@@ -153,23 +153,23 @@ export default function Home() {
         <div className="grid grid-cols-2 gap-3 mb-8">
           <Link to="/log" className="bg-primary text-primary-foreground rounded-2xl p-5 flex flex-col gap-2 hover:opacity-90 transition-opacity">
             <span className="text-2xl">📝</span>
-            <span className="font-semibold">Log Entry</span>
+            <span className="font-semibold">Log</span>
             <span className="text-xs text-primary-foreground/70">Track your waste or water</span>
           </Link>
           <Link to="/plant" className="bg-card border border-border rounded-2xl p-5 flex flex-col gap-2 hover:bg-muted transition-colors">
             <span className="text-2xl">🎯</span>
-            <span className="font-semibold">My Goals</span>
-            <span className="text-xs text-muted-foreground">View progress</span>
+            <span className="font-semibold">Plant</span>
+            <span className="text-xs text-muted-foreground">View your goals</span>
           </Link>
           <Link to="/oasis" className="bg-card border border-border rounded-2xl p-5 flex flex-col gap-2 hover:bg-muted transition-colors">
             <span className="text-2xl">🗺️</span>
-            <span className="font-semibold">Find Sites</span>
-            <span className="text-xs text-muted-foreground">Disposal near you</span>
+            <span className="font-semibold">Oasis</span>
+            <span className="text-xs text-muted-foreground">Disposal sites near you</span>
           </Link>
           <Link to="/harvest" className="bg-gold/10 border border-gold/30 rounded-2xl p-5 flex flex-col gap-2 hover:bg-gold/20 transition-colors">
             <span className="text-2xl">🎁</span>
-            <span className="font-semibold">Redeem</span>
-            <span className="text-xs text-muted-foreground">Use your points</span>
+            <span className="font-semibold">Harvest</span>
+            <span className="text-xs text-muted-foreground">Use your seeds</span>
           </Link>
         </div>
       </div>
