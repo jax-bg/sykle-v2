@@ -1,12 +1,11 @@
 // @ts-nocheck
-const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null, updateMe: async()=>({}) }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, list:async()=>[], create:async()=>({}), update:async()=>({}), delete:async()=>({}), bulkCreate:async()=>[] }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
-
 import { useState, useEffect } from "react";
+import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/lib/AuthContext";
 
 import { getLevelInfo, today } from "@/lib/utils";
 import LevelRing from "@/components/LevelRing";
 import StatCard from "@/components/StatCard";
-import { useAuth } from "@/lib/AuthContext";
 import { Flame, Droplets, Trash2, Recycle, Star } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 
@@ -22,29 +21,44 @@ const tips = [
 
 export default function Home() {
   const navigate = useNavigate();
-  const { isAuthenticated, logout } = useAuth();
-  const [user, setUser] = useState(null);
+  const { isAuthenticated, logout, profile, isLoadingAuth, authChecked } = useAuth();
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(true);
   const [tip] = useState(tips[Math.floor(Math.random() * tips.length)]);
 
   useEffect(() => {
-    async function load() {
-      try {
-        const [me, logs] = await Promise.all([
-          db.auth.me(),
-          db.entities.LogEntry.list("-entry_date", 100),
-        ]);
-        setUser(me);
-        setEntries(logs);
-      } finally {
-        setLoading(false);
-      }
+    if (!isLoadingAuth && authChecked) {
+      load();
     }
-    load();
-  }, []);
+  }, [isLoadingAuth, authChecked, profile]);
 
-  const levelInfo = getLevelInfo(user?.lifetime_points || 0);
+  async function load() {
+    setLoading(true);
+    const userId = profile?.id;
+    if (!userId) {
+      setEntries([]);
+      setLoading(false);
+      return;
+    }
+
+    const { data: logs, error } = await supabase
+      .from('LogEntry')
+      .select('*')
+      .eq('user_id', userId)
+      .order('entry_date', { ascending: false })
+      .limit(100);
+
+    if (error) {
+      console.error('Failed to load log entries:', error);
+      setEntries([]);
+    } else {
+      setEntries(logs || []);
+    }
+
+    setLoading(false);
+  }
+
+  const levelInfo = getLevelInfo(profile?.lifetime_points || 0);
 
   // Stats for last 7 days
   const sevenDaysAgo = new Date();
@@ -54,7 +68,7 @@ export default function Home() {
   const totalWaste = recentEntries.filter(e => e.category === "waste").reduce((s, e) => s + (e.amount || 0), 0);
   const totalRecycled = recentEntries.filter(e => e.subtype === "recyclable" || e.subtype === "e-waste").reduce((s, e) => s + (e.amount || 0), 0);
 
-  const firstName = user?.full_name?.split(" ")[0] || "TPSian";
+  const firstName = profile?.full_name?.split(" ")[0] || "TPSian";
 
   if (loading) return (
     <div className="flex items-center justify-center min-h-screen">
@@ -74,7 +88,7 @@ export default function Home() {
             </div>
             <div className="flex items-center gap-2 bg-white/10 backdrop-blur rounded-2xl px-4 py-2">
               <Star size={16} className="text-gold fill-gold" />
-              <span className="font-bold text-lg">{(user?.points || 0).toLocaleString()}</span>
+              <span className="font-bold text-lg">{(profile?.points || 0).toLocaleString()}</span>
               <span className="text-xs text-primary-foreground/60">Seeds</span>
               {isAuthenticated ? (
                 <button
@@ -97,7 +111,7 @@ export default function Home() {
           {/* Streak */}
           <div className="flex items-center gap-2 bg-white/10 backdrop-blur rounded-2xl px-4 py-3 w-fit">
             <Flame size={18} className="text-orange-300" />
-            <span className="font-semibold">{user?.current_streak || 0} day streak</span>
+            <span className="font-semibold">{profile?.current_streak || 0} day streak</span>
           </div>
         </div>
       </div>
@@ -105,7 +119,7 @@ export default function Home() {
       <div className="max-w-2xl mx-auto px-6 -mt-8">
         {/* Level card */}
         <div className="bg-card rounded-2xl shadow-lg border border-border/60 p-6 mb-6 flex items-center gap-6">
-          <LevelRing lifetimePoints={user?.lifetime_points || 0} size={100} />
+          <LevelRing lifetimePoints={profile?.lifetime_points || 0} size={100} />
           <div className="flex-1">
             <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium mb-1">Your Level</p>
             <p className="font-display text-2xl font-semibold text-primary">{levelInfo.title}</p>

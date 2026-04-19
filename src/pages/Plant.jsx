@@ -1,6 +1,7 @@
-const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null, updateMe: async()=>({}) }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, list:async()=>[], create:async()=>({}), update:async()=>({}), delete:async()=>({}), bulkCreate:async()=>[] }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
-
+// @ts-nocheck
 import { useState, useEffect } from "react";
+import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/lib/AuthContext";
 
 import { getLevelInfo, today } from "@/lib/utils";
 import LevelRing from "@/components/LevelRing";
@@ -23,7 +24,7 @@ const LEVEL_MILESTONES = [
 ];
 
 export default function Goals() {
-  const [user, setUser] = useState(null);
+  const { profile, isLoadingAuth, authChecked } = useAuth();
   const [goals, setGoals] = useState([]);
   const [entries, setEntries] = useState([]);
   const [showForm, setShowForm] = useState(false);
@@ -31,24 +32,70 @@ export default function Goals() {
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState({ title: "", category: "water", target_amount: "", period: "weekly", direction: "reduce", unit: "L" });
 
-  useEffect(() => { loadData(); }, []);
+  useEffect(() => {
+    if (!isLoadingAuth && authChecked) {
+      loadData();
+    }
+  }, [isLoadingAuth, authChecked, profile]);
 
   async function loadData() {
-    const [me, gs, es] = await Promise.all([
-      db.auth.me(),
-      db.entities.Goal.filter({ active: true }),
-      db.entities.LogEntry.list("-entry_date", 200),
+    setLoading(true);
+    const userId = profile?.id;
+    if (!userId) {
+      setGoals([]);
+      setEntries([]);
+      setLoading(false);
+      return;
+    }
+
+    const [goalsResult, entriesResult] = await Promise.all([
+      supabase.from('Goals').select('*').eq('user_id', userId).eq('active', true),
+      supabase.from('LogEntry').select('*').eq('user_id', userId).order('entry_date', { ascending: false }).limit(200),
     ]);
-    setUser(me);
-    setGoals(gs);
-    setEntries(es);
+
+    if (goalsResult.error) {
+      console.error('Failed to load goals:', goalsResult.error);
+      setGoals([]);
+    } else {
+      setGoals(goalsResult.data || []);
+    }
+
+    if (entriesResult.error) {
+      console.error('Failed to load log entries:', entriesResult.error);
+      setEntries([]);
+    } else {
+      setEntries(entriesResult.data || []);
+    }
+
     setLoading(false);
   }
 
   async function handleCreate(e) {
     e.preventDefault();
     setSubmitting(true);
-    await db.entities.Goal.create({ ...form, target_amount: parseFloat(form.target_amount), start_date: today(), active: true });
+    const userId = profile?.id;
+    if (!userId) {
+      console.error('Not authenticated.');
+      setSubmitting(false);
+      return;
+    }
+
+    const { error } = await supabase.from('Goals').insert([
+      {
+        user_id: userId,
+        ...form,
+        target_amount: parseFloat(form.target_amount),
+        start_date: today(),
+        active: true,
+      }
+    ]);
+
+    if (error) {
+      console.error('Failed to create goal:', error);
+      setSubmitting(false);
+      return;
+    }
+
     setShowForm(false);
     setForm({ title: "", category: "water", target_amount: "", period: "weekly", direction: "reduce", unit: "L" });
     await loadData();
@@ -56,7 +103,11 @@ export default function Goals() {
   }
 
   async function deleteGoal(id) {
-    await db.entities.Goal.update(id, { active: false });
+    const { error } = await supabase.from('Goals').update({ active: false }).eq('id', id);
+    if (error) {
+      console.error('Failed to delete goal:', error);
+      return;
+    }
     setGoals(gs => gs.filter(g => g.id !== id));
   }
 
@@ -83,7 +134,7 @@ export default function Goals() {
     }
   }
 
-  const levelInfo = getLevelInfo(user?.lifetime_points || 0);
+  const levelInfo = getLevelInfo(profile?.lifetime_points || 0);
 
   return (
     <div className="min-h-screen bg-background">
@@ -99,11 +150,11 @@ export default function Goals() {
         <div className="bg-card rounded-2xl border border-border/60 shadow-sm p-6 mb-6">
           <h2 className="font-display text-xl font-semibold mb-5">Your Level</h2>
           <div className="flex gap-6 items-center">
-            <LevelRing lifetimePoints={user?.lifetime_points || 0} size={110} />
+            <LevelRing lifetimePoints={profile?.lifetime_points || 0} size={110} />
             <div className="flex-1">
               <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Total XP</p>
-              <p className="text-3xl font-bold text-primary">{(user?.lifetime_points || 0).toLocaleString()}</p>
-              <p className="text-sm text-muted-foreground mt-1">redeemable: <strong className="text-foreground">{(user?.points || 0).toLocaleString()} pts</strong></p>
+              <p className="text-3xl font-bold text-primary">{(profile?.lifetime_points || 0).toLocaleString()}</p>
+              <p className="text-sm text-muted-foreground mt-1">redeemable: <strong className="text-foreground">{(profile?.points || 0).toLocaleString()} pts</strong></p>
             </div>
           </div>
 
@@ -111,7 +162,7 @@ export default function Goals() {
           <div className="mt-6 space-y-2">
             <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">Level Milestones</p>
             {LEVEL_MILESTONES.map(m => {
-              const unlocked = (user?.lifetime_points || 0) >= m.points;
+              const unlocked = (profile?.lifetime_points || 0) >= m.points;
               const isCurrent = levelInfo.level === m.level;
               return (
                 <div key={m.level} className={cn(

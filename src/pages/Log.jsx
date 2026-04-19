@@ -1,6 +1,6 @@
-const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null, updateMe: async()=>({}) }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, list:async()=>[], create:async()=>({}), update:async()=>({}), delete:async()=>({}), bulkCreate:async()=>[] }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
-
 import { useState, useEffect } from "react";
+import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/lib/AuthContext";
 
 import { calcPointsForEntry, formatDate, today } from "@/lib/utils";
 import { Droplets, Trash2, Plus, ChevronRight, Loader2, CheckCircle2 } from "lucide-react";
@@ -33,6 +33,7 @@ const WATER_RATES = {
 };
 
 export default function Log() {
+  const { user, profile, updateProfile, isLoadingAuth, authChecked } = useAuth();
   const [category, setCategory] = useState("waste");
   const [subtype, setSubtype] = useState("recyclable");
   const [amount, setAmount] = useState("");
@@ -45,20 +46,36 @@ export default function Log() {
   const [success, setSuccess] = useState(false);
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState(null);
 
   useEffect(() => {
-    loadData();
-  }, []);
+    if (!isLoadingAuth && authChecked) {
+      loadData();
+    }
+  }, [isLoadingAuth, authChecked, profile]);
 
   async function loadData() {
     setLoading(true);
-    const [me, logs] = await Promise.all([
-      db.auth.me(),
-      db.entities.LogEntry.list("-entry_date", 30),
-    ]);
-    setUser(me);
-    setEntries(logs);
+    const userId = profile?.id || user?.id;
+    if (!userId) {
+      setEntries([]);
+      setLoading(false);
+      return;
+    }
+
+    const { data: logs, error } = await supabase
+      .from('LogEntry')
+      .select('*')
+      .eq('user_id', userId)
+      .order('entry_date', { ascending: false })
+      .limit(30);
+
+    if (error) {
+      console.error('Failed to load log entries:', error);
+      setEntries([]);
+    } else {
+      setEntries(logs || []);
+    }
+
     setLoading(false);
   }
 
@@ -70,32 +87,55 @@ export default function Log() {
     e.preventDefault();
     if (isNaN(computedAmount) || computedAmount <= 0) return;
     setSubmitting(true);
+
+    const userId = profile?.id || user?.id;
+    if (!userId) {
+      console.error('Not authenticated.');
+      setSubmitting(false);
+      return;
+    }
+
     const pts = calcPointsForEntry(category, subtype, computedAmount);
-    await db.entities.LogEntry.create({
-      category,
-      subtype,
-      amount: computedAmount,
-      unit: category === "water" ? "L" : "kg",
-      notes,
-      entry_date: entryDate,
-      points_earned: pts,
-    });
-    // Update user points
-    const newPoints = (user?.points || 0) + pts;
-    const newLifetime = (user?.lifetime_points || 0) + pts;
-    const lastDate = user?.last_log_date;
+    const { error: insertError } = await supabase.from('LogEntry').insert([
+      {
+        user_id: userId,
+        category,
+        subtype,
+        amount: computedAmount,
+        unit: category === "water" ? "L" : "kg",
+        notes,
+        entry_date: entryDate,
+        points_earned: pts,
+      }
+    ]);
+
+    if (insertError) {
+      console.error('Failed to create log entry:', insertError);
+      setSubmitting(false);
+      return;
+    }
+
+    const newPoints = (profile?.points || 0) + pts;
+    const newLifetime = (profile?.lifetime_points || 0) + pts;
+    const lastDate = profile?.last_log_date;
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
     const yStr = yesterday.toISOString().split("T")[0];
     const streak = lastDate === yStr || lastDate === today()
-      ? (user?.current_streak || 0) + (lastDate !== today() ? 1 : 0)
+      ? (profile?.current_streak || 0) + (lastDate !== today() ? 1 : 0)
       : 1;
-    await db.auth.updateMe({
-      points: newPoints,
-      lifetime_points: newLifetime,
-      current_streak: streak,
-      last_log_date: today(),
-    });
+
+    try {
+      await updateProfile({
+        points: newPoints,
+        lifetime_points: newLifetime,
+        current_streak: streak,
+        last_log_date: today(),
+      });
+    } catch (profileError) {
+      console.error('Failed to update profile:', profileError);
+    }
+
     setAmount("");
     setTimeValue("");
     setTimeUnit("minutes");
