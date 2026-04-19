@@ -26,11 +26,12 @@ const LEVEL_MILESTONES = [
 export default function Goals() {
   const { profile, isLoadingAuth, authChecked } = useAuth();
   const [goals, setGoals] = useState([]);
-  const [entries, setEntries] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [form, setForm] = useState({ title: "", category: "water", target_amount: "", period: "weekly", direction: "reduce", unit: "L" });
+  const [formError, setFormError] = useState(null);
+  const [formSuccess, setFormSuccess] = useState(null);
+  const [form, setForm] = useState({ title: "", target_value: "" });
 
   useEffect(() => {
     if (!isLoadingAuth && authChecked) {
@@ -43,28 +44,21 @@ export default function Goals() {
     const userId = profile?.id;
     if (!userId) {
       setGoals([]);
-      setEntries([]);
       setLoading(false);
       return;
     }
 
-    const [goalsResult, entriesResult] = await Promise.all([
-      supabase.from('Goals').select('*').eq('user_id', userId).eq('active', true),
-      supabase.from('LogEntry').select('*').eq('user_id', userId).order('entry_date', { ascending: false }).limit(200),
-    ]);
+    const { data: goalsData, error: goalsError } = await supabase
+      .from('Goals')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('is_completed', false);
 
-    if (goalsResult.error) {
-      console.error('Failed to load goals:', goalsResult.error);
+    if (goalsError) {
+      console.error('Failed to load goals:', goalsError);
       setGoals([]);
     } else {
-      setGoals(goalsResult.data || []);
-    }
-
-    if (entriesResult.error) {
-      console.error('Failed to load log entries:', entriesResult.error);
-      setEntries([]);
-    } else {
-      setEntries(entriesResult.data || []);
+      setGoals(goalsData || []);
     }
 
     setLoading(false);
@@ -72,38 +66,61 @@ export default function Goals() {
 
   async function handleCreate(e) {
     e.preventDefault();
+    setFormError(null);
+    setFormSuccess(null);
     setSubmitting(true);
+
     const userId = profile?.id;
     if (!userId) {
-      console.error('Not authenticated.');
+      const errorMessage = 'You must be signed in to create a goal.';
+      console.error(errorMessage);
+      setFormError(errorMessage);
       setSubmitting(false);
       return;
     }
 
-    const { error } = await supabase.from('Goals').insert([
+    const targetAmount = parseFloat(form.target_value);
+    if (isNaN(targetAmount) || targetAmount <= 0) {
+      setFormError('Please enter a valid target value.');
+      setSubmitting(false);
+      return;
+    }
+
+    const { data, error } = await supabase.from('Goals').insert([
       {
         user_id: userId,
-        ...form,
-        target_amount: parseFloat(form.target_amount),
-        start_date: today(),
-        active: true,
+        title: form.title,
+        target_value: targetAmount,
+        current_value: 0,
+        is_completed: false,
       }
-    ]);
+    ]).select();
 
     if (error) {
+      const errorMessage = error.message || 'Failed to create goal.';
       console.error('Failed to create goal:', error);
+      setFormError(errorMessage);
       setSubmitting(false);
       return;
     }
 
+    if (!data || data.length === 0) {
+      const errorMessage = 'Goal creation failed. Please check your table schema or permissions.';
+      console.error(errorMessage, { data });
+      setFormError(errorMessage);
+      setSubmitting(false);
+      return;
+    }
+
+    setFormSuccess('Goal created successfully!');
     setShowForm(false);
-    setForm({ title: "", category: "water", target_amount: "", period: "weekly", direction: "reduce", unit: "L" });
+    setForm({ title: "", target_value: "" });
     await loadData();
     setSubmitting(false);
   }
 
   async function deleteGoal(id) {
-    const { error } = await supabase.from('Goals').update({ active: false }).eq('id', id);
+    const { error } = await supabase.from('Goals').update({ is_completed: true }).eq('id', id);
     if (error) {
       console.error('Failed to delete goal:', error);
       return;
@@ -112,26 +129,10 @@ export default function Goals() {
   }
 
   function getGoalProgress(goal) {
-    const now = new Date();
-    const start = new Date(goal.start_date || goal.created_date);
-    const periodDays = goal.period === "weekly" ? 7 : 30;
-    const cutoff = new Date(start);
-    cutoff.setDate(cutoff.getDate() + periodDays);
-    const relevant = entries.filter(e => {
-      const d = new Date(e.entry_date);
-      return d >= start && d <= cutoff &&
-        (goal.category === "recycling"
-          ? (e.subtype === "recyclable" || e.subtype === "e-waste")
-          : e.category === goal.category);
-    });
-    const total = relevant.reduce((s, e) => s + (e.amount || 0), 0);
-    if (goal.direction === "reduce") {
-      const progress = Math.min(100, (1 - total / goal.target_amount) * 100);
-      return { total, progress: Math.max(0, progress) };
-    } else {
-      const progress = Math.min(100, (total / goal.target_amount) * 100);
-      return { total, progress };
-    }
+    const current = goal.current_value || 0;
+    const target = goal.target_value || 1;
+    const progress = Math.min(100, (current / target) * 100);
+    return { total: current, progress };
   }
 
   const levelInfo = getLevelInfo(profile?.lifetime_points || 0);
@@ -184,8 +185,19 @@ export default function Goals() {
 
         {/* Goals */}
         <div className="flex items-center justify-between mb-4">
-          <h2 className="font-display text-xl font-semibold">My Goals</h2>
-          <Button size="sm" onClick={() => setShowForm(v => !v)} className="rounded-xl gap-1.5">
+          <div>
+            <h2 className="font-display text-xl font-semibold">My Goals</h2>
+            {formSuccess && <p className="text-sm text-green-600 mt-1">{formSuccess}</p>}
+          </div>
+          <Button
+            size="sm"
+            onClick={() => {
+              setShowForm(v => !v);
+              setFormError(null);
+              setFormSuccess(null);
+            }}
+            className="rounded-xl gap-1.5"
+          >
             <Plus size={16} /> New Goal
           </Button>
         </div>
@@ -198,48 +210,19 @@ export default function Goals() {
                 <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1.5 block">Goal Name</label>
                 <Input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="e.g. Reduce shower water" required className="rounded-xl h-11" />
               </div>
-              <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 gap-3">
                 <div>
-                  <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1.5 block">Category</label>
-                  <select
-                    value={form.category}
-                    onChange={e => setForm(f => ({ ...f, category: e.target.value, unit: e.target.value === "water" ? "L" : "kg" }))}
-                    className="w-full h-11 rounded-xl border border-input bg-background px-3 text-sm"
-                  >
-                    <option value="water">💧 Water (L)</option>
-                    <option value="waste">🗑️ Waste (kg)</option>
-                    <option value="recycling">♻️ Recycling (kg)</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1.5 block">Period</label>
-                  <select
-                    value={form.period}
-                    onChange={e => setForm(f => ({ ...f, period: e.target.value }))}
-                    className="w-full h-11 rounded-xl border border-input bg-background px-3 text-sm"
-                  >
-                    <option value="weekly">Weekly</option>
-                    <option value="monthly">Monthly</option>
-                  </select>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1.5 block">
-                    Target ({form.unit})
-                  </label>
-                  <Input type="number" min="0" step="0.1" value={form.target_amount} onChange={e => setForm(f => ({ ...f, target_amount: e.target.value }))} placeholder="e.g. 200" required className="rounded-xl h-11" />
-                </div>
-                <div>
-                  <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1.5 block">Direction</label>
-                  <select
-                    value={form.direction}
-                    onChange={e => setForm(f => ({ ...f, direction: e.target.value }))}
-                    className="w-full h-11 rounded-xl border border-input bg-background px-3 text-sm"
-                  >
-                    <option value="reduce">🔻 Reduce</option>
-                    <option value="increase">🔺 Increase</option>
-                  </select>
+                  <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1.5 block">Target Value</label>
+                  <Input
+                    type="number"
+                    min="0"
+                    step="0.1"
+                    value={form.target_value}
+                    onChange={e => setForm(f => ({ ...f, target_value: e.target.value }))}
+                    placeholder="e.g. 200"
+                    required
+                    className="rounded-xl h-11"
+                  />
                 </div>
               </div>
               <div className="flex gap-3">
@@ -249,6 +232,8 @@ export default function Goals() {
                   Create Goal
                 </Button>
               </div>
+              {formError && <p className="text-sm text-red-600">{formError}</p>}
+              {formSuccess && <p className="text-sm text-green-600">{formSuccess}</p>}
             </form>
           </div>
         )}
@@ -265,13 +250,12 @@ export default function Goals() {
           <div className="space-y-4">
             {goals.map(goal => {
               const { total, progress } = getGoalProgress(goal);
-              const isReduce = goal.direction === "reduce";
               return (
                 <div key={goal.id} className="bg-card border border-border/60 rounded-2xl p-5 shadow-sm">
                   <div className="flex items-start justify-between mb-3">
                     <div>
                       <p className="font-semibold">{goal.title}</p>
-                      <p className="text-xs text-muted-foreground capitalize">{goal.period} · {goal.direction === "reduce" ? "keep below" : "reach"} {goal.target_amount} {goal.unit}</p>
+                      <p className="text-xs text-muted-foreground capitalize">Target: {goal.target_value}</p>
                     </div>
                     <button onClick={() => deleteGoal(goal.id)} className="text-muted-foreground hover:text-destructive transition-colors p-1">
                       <Trash2 size={16} />
@@ -279,7 +263,7 @@ export default function Goals() {
                   </div>
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">{total.toFixed(1)} {goal.unit} logged</span>
+                      <span className="text-muted-foreground">{total.toFixed(1)} / {goal.target_value}</span>
                       <span className="font-medium text-primary">{Math.round(progress)}%</span>
                     </div>
                     <div className="bg-muted rounded-full h-2.5">
@@ -288,9 +272,6 @@ export default function Goals() {
                         style={{ width: `${progress}%` }}
                       />
                     </div>
-                    {isReduce && total > goal.target_amount && (
-                      <p className="text-xs text-destructive">Over target by {(total - goal.target_amount).toFixed(1)} {goal.unit}</p>
-                    )}
                   </div>
                 </div>
               );
