@@ -14,6 +14,7 @@ import Plant from './pages/Plant';
 import Oasis from './pages/Oasis';
 import Harvest from './pages/Harvest';
 import Glean from './pages/Glean';
+import Account from './pages/Account';
 import Login from './pages/Login';
 
 const AuthenticatedApp = () => {
@@ -64,6 +65,7 @@ const AuthenticatedApp = () => {
         <Route path="/oasis" element={<Oasis />} />
         <Route path="/harvest" element={<Harvest />} />
         <Route path="/glean" element={<Glean />} />
+        <Route path="/account" element={<Account />} />
         <Route path="/login" element={<Login />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />

@@ -1,15 +1,68 @@
 import { supabase } from '../lib/supabase';
-
 import React, { createContext, useState, useContext, useEffect } from 'react';
 
 const AuthContext = createContext(/** @type {any} */ (null));
 
+function isTableNotFoundError(error) {
+  const message = error?.message || '';
+  return /(does not exist|relation .* does not exist|table .* does not exist)/i.test(message);
+}
+
+async function fetchOrCreateProfile(user) {
+  if (!user?.id) return null;
+
+  const { data: profile, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', user.id)
+    .maybeSingle();
+
+  if (error && !isTableNotFoundError(error)) {
+    console.error('Profile load failed:', error);
+    throw error;
+  }
+
+  if (profile) {
+    return profile;
+  }
+
+  if (error && isTableNotFoundError(error)) {
+    return null;
+  }
+
+  const defaultProfile = {
+    id: user.id,
+    email: user.email || null,
+    full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || null,
+    avatar_url: user.user_metadata?.picture || user.user_metadata?.avatar_url || null,
+    lifetime_points: 0,
+    points: 0,
+    current_streak: 0,
+    last_log_date: null,
+  };
+
+  const { data: insertedProfile, error: insertError } = await supabase
+    .from('profiles')
+    .upsert(defaultProfile, { onConflict: 'id' })
+    .select()
+    .maybeSingle();
+
+  if (insertError && !isTableNotFoundError(insertError)) {
+    console.error('Creating profile failed:', insertError);
+    throw insertError;
+  }
+
+  return insertError && isTableNotFoundError(insertError) ? defaultProfile : insertedProfile;
+}
+
 /** @param {{ children: React.ReactNode }} props */
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(/** @type {any} */ (null));
+  const [profile, setProfile] = useState(/** @type {any} */ (null));
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
   const [isLoadingPublicSettings, setIsLoadingPublicSettings] = useState(true);
+  const [isLoadingProfile, setIsLoadingProfile] = useState(true);
   const [authError, setAuthError] = useState(/** @type {any} */ (null));
   const [authChecked, setAuthChecked] = useState(false);
   const [appPublicSettings, setAppPublicSettings] = useState(null);
@@ -35,6 +88,18 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const loadUserProfile = async (sessionUser) => {
+    setIsLoadingProfile(true);
+    try {
+      const profileData = await fetchOrCreateProfile(sessionUser);
+      setProfile(profileData);
+    } catch (error) {
+      setProfile(null);
+    } finally {
+      setIsLoadingProfile(false);
+    }
+  };
+
   const checkUserAuth = async () => {
     try {
       setIsLoadingAuth(true);
@@ -45,12 +110,13 @@ export const AuthProvider = ({ children }) => {
 
       if (!sessionData?.session) {
         setUser(null);
+        setProfile(null);
         setIsAuthenticated(false);
         return;
       }
 
       const {
-        data: { user },
+        data: { user: sessionUser },
         error
       } = await supabase.auth.getUser();
 
@@ -58,16 +124,21 @@ export const AuthProvider = ({ children }) => {
         throw error;
       }
 
-      setUser(user ?? null);
-      setIsAuthenticated(!!user);
+      setUser(sessionUser ?? null);
+      setIsAuthenticated(!!sessionUser);
+      if (sessionUser) {
+        await loadUserProfile(sessionUser);
+      }
     } catch (error) {
       const err = /** @type {any} */ (error);
       if (err?.message?.includes('Auth session missing')) {
         setUser(null);
+        setProfile(null);
         setIsAuthenticated(false);
       } else {
         console.error('User auth check failed:', error);
         setUser(null);
+        setProfile(null);
         setIsAuthenticated(false);
       }
     } finally {
@@ -101,6 +172,7 @@ export const AuthProvider = ({ children }) => {
     }
 
     setUser(null);
+    setProfile(null);
     setIsAuthenticated(false);
     setAuthChecked(true);
 
@@ -113,11 +185,40 @@ export const AuthProvider = ({ children }) => {
     window.location.href = '/login';
   };
 
+  const updateProfile = async (updates) => {
+    if (!user?.id) {
+      throw new Error('Not authenticated');
+    }
+
+    const payload = {
+      id: user.id,
+      ...updates,
+      email: updates.email || user.email,
+      updated_at: new Date().toISOString(),
+    };
+
+    const { data, error } = await supabase
+      .from('profiles')
+      .upsert(payload, { onConflict: 'id' })
+      .select()
+      .maybeSingle();
+
+    if (error) {
+      console.error('Profile update failed:', error);
+      throw error;
+    }
+
+    setProfile(data);
+    return data;
+  };
+
   return (
-    <AuthContext.Provider value={{ 
-      user, 
-      isAuthenticated, 
+    <AuthContext.Provider value={{
+      user,
+      profile,
+      isAuthenticated,
       isLoadingAuth,
+      isLoadingProfile,
       isLoadingPublicSettings,
       authError,
       appPublicSettings,
@@ -126,7 +227,8 @@ export const AuthProvider = ({ children }) => {
       navigateToLogin,
       signInWithGoogle,
       checkUserAuth,
-      checkAppState
+      checkAppState,
+      updateProfile
     }}>
       {children}
     </AuthContext.Provider>
