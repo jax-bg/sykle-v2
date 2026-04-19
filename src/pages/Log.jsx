@@ -112,7 +112,7 @@ export default function Log() {
         amount: computedAmount,
         entry_date: entryDate,
       }
-    ]);
+    ]).select();
 
     if (insertError) {
       const errorMessage = insertError.message || 'Failed to create log entry.';
@@ -123,8 +123,8 @@ export default function Log() {
     }
 
     if (!data || data.length === 0) {
-      const errorMessage = 'Log entry was not saved. Please try again.';
-      console.error(errorMessage);
+      const errorMessage = 'Log entry appears to have been blocked by Supabase permissions or RLS. Please check your policy settings.';
+      console.error(errorMessage, { data });
       setFormError(errorMessage);
       setSubmitting(false);
       return;
