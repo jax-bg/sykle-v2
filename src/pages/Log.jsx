@@ -112,7 +112,6 @@ export default function Log() {
         amount: computedAmount,
         unit: category === "water" ? "L" : "kg",
         entry_date: entryDate,
-        points_earned: pts,
       }
     ]);
 
@@ -375,7 +374,6 @@ export default function Log() {
                 </div>
                 <div className="text-right">
                   <p className="font-semibold text-sm">{entry.amount} {entry.unit}</p>
-                  <p className="text-xs text-gold font-medium">+{entry.points_earned} pts</p>
                 </div>
               </div>
             ))}
