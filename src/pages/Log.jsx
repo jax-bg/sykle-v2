@@ -44,6 +44,7 @@ export default function Log() {
   const [entryDate, setEntryDate] = useState(today());
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [formError, setFormError] = useState(null);
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -85,18 +86,26 @@ export default function Log() {
 
   async function handleSubmit(e) {
     e.preventDefault();
-    if (isNaN(computedAmount) || computedAmount <= 0) return;
+    setFormError(null);
+
+    if (isNaN(computedAmount) || computedAmount <= 0) {
+      setFormError('Please enter a valid amount.');
+      return;
+    }
+
     setSubmitting(true);
 
     const userId = profile?.id || user?.id;
     if (!userId) {
-      console.error('Not authenticated.');
+      const errorMessage = 'You must be signed in to log an entry.';
+      console.error(errorMessage);
+      setFormError(errorMessage);
       setSubmitting(false);
       return;
     }
 
     const pts = calcPointsForEntry(category, subtype, computedAmount);
-    const { error: insertError } = await supabase.from('LogEntry').insert([
+    const { data, error: insertError } = await supabase.from('LogEntry').insert([
       {
         user_id: userId,
         category,
@@ -110,7 +119,17 @@ export default function Log() {
     ]);
 
     if (insertError) {
+      const errorMessage = insertError.message || 'Failed to create log entry.';
       console.error('Failed to create log entry:', insertError);
+      setFormError(errorMessage);
+      setSubmitting(false);
+      return;
+    }
+
+    if (!data || data.length === 0) {
+      const errorMessage = 'Log entry was not saved. Please try again.';
+      console.error(errorMessage);
+      setFormError(errorMessage);
       setSubmitting(false);
       return;
     }
@@ -134,6 +153,7 @@ export default function Log() {
       });
     } catch (profileError) {
       console.error('Failed to update profile:', profileError);
+      setFormError('Log entry saved, but profile update failed.');
     }
 
     setAmount("");
@@ -338,6 +358,9 @@ export default function Log() {
               {submitting ? <Loader2 size={18} className="animate-spin mr-2" /> : success ? <CheckCircle2 size={18} className="mr-2" /> : <Plus size={18} className="mr-2" />}
               {submitting ? "Saving…" : success ? "Saved!" : "Log Entry"}
             </Button>
+            {formError && (
+              <p className="mt-3 text-sm text-red-600">{formError}</p>
+            )}
           </form>
         </div>
 
