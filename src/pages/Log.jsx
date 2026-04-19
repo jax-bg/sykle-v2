@@ -37,7 +37,8 @@ export default function Log() {
   const [subtype, setSubtype] = useState("recyclable");
   const [amount, setAmount] = useState("");
   const [useTime, setUseTime] = useState(false);
-  const [minutes, setMinutes] = useState("");
+  const [timeValue, setTimeValue] = useState("");
+  const [timeUnit, setTimeUnit] = useState("minutes");
   const [notes, setNotes] = useState("");
   const [entryDate, setEntryDate] = useState(today());
   const [submitting, setSubmitting] = useState(false);
@@ -61,8 +62,8 @@ export default function Log() {
     setLoading(false);
   }
 
-  const computedAmount = useTime && category === "water" && minutes
-    ? parseFloat((parseFloat(minutes) / 60 * WATER_RATES[subtype]).toFixed(1))
+  const computedAmount = useTime && category === "water" && timeValue
+    ? parseFloat((parseFloat(timeValue) * (timeUnit === "hours" ? 1 : 1 / 60) * WATER_RATES[subtype]).toFixed(1))
     : parseFloat(amount);
 
   async function handleSubmit(e) {
@@ -96,7 +97,8 @@ export default function Log() {
       last_log_date: today(),
     });
     setAmount("");
-    setMinutes("");
+    setTimeValue("");
+    setTimeUnit("minutes");
     setNotes("");
     setSuccess(true);
     setTimeout(() => setSuccess(false), 2500);
@@ -173,7 +175,7 @@ export default function Log() {
                 {category === "water" && (
                   <button
                     type="button"
-                    onClick={() => { setUseTime(t => !t); setAmount(""); setMinutes(""); }}
+                    onClick={() => { setUseTime(t => !t); setAmount(""); setTimeValue(""); setTimeUnit("minutes"); }}
                     className="text-xs text-primary font-medium hover:underline"
                   >
                     {useTime ? "Enter litres instead" : "⏱ Use time instead"}
@@ -182,23 +184,56 @@ export default function Log() {
               </div>
 
               {category === "water" && useTime ? (
-                <div className="space-y-2">
-                  <div className="relative">
-                    <Input
-                      type="number"
-                      step="1"
-                      min="0"
-                      value={minutes}
-                      onChange={e => setMinutes(e.target.value)}
-                      placeholder="e.g. 10"
-                      className="pr-16 h-12 text-base rounded-xl"
-                      required
-                    />
-                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">mins</span>
+                <div className="space-y-3">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex-1">
+                      <div className="relative">
+                        <Input
+                          type="number"
+                          step={timeUnit === "hours" ? "0.1" : "1"}
+                          min="0"
+                          value={timeValue}
+                          onChange={e => setTimeValue(e.target.value)}
+                          placeholder={timeUnit === "hours" ? "e.g. 0.5" : "e.g. 10"}
+                          className="pr-16 h-12 text-base rounded-xl"
+                          required
+                        />
+                        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                          {timeUnit === "hours" ? "hrs" : "mins"}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setTimeUnit("minutes")}
+                        className={cn(
+                          "rounded-xl border px-3 py-2 text-sm transition",
+                          timeUnit === "minutes"
+                            ? "bg-primary text-primary-foreground border-primary"
+                            : "bg-muted text-muted-foreground border-border"
+                        )}
+                      >
+                        Minutes
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setTimeUnit("hours")}
+                        className={cn(
+                          "rounded-xl border px-3 py-2 text-sm transition",
+                          timeUnit === "hours"
+                            ? "bg-primary text-primary-foreground border-primary"
+                            : "bg-muted text-muted-foreground border-border"
+                        )}
+                      >
+                        Hours
+                      </button>
+                    </div>
                   </div>
-                  {minutes && !isNaN(parseFloat(minutes)) && (
+
+                  {timeValue && !isNaN(parseFloat(timeValue)) && (
                     <p className="text-xs text-muted-foreground px-1">
-                      ≈ <strong>{(parseFloat(minutes) / 60 * WATER_RATES[subtype]).toFixed(1)} L</strong> used
+                      ≈ <strong>{(parseFloat(timeValue) * (timeUnit === "hours" ? 1 : 1 / 60) * WATER_RATES[subtype]).toFixed(1)} L</strong> used
                       &nbsp;(avg {WATER_RATES[subtype]} L/hr for {WATER_TYPES.find(t => t.value === subtype)?.label})
                     </p>
                   )}
