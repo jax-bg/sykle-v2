@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@/lib/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Loader2, LogOut, UserCircle2, ShieldCheck, Settings } from 'lucide-react';
+import { Loader2, LogOut, UserCircle2 } from 'lucide-react';
 
 export default function Account() {
   const {
@@ -23,9 +23,6 @@ export default function Account() {
   });
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
-
-  // 1. Check if the user has admin privileges
-  const isAdmin = profile?.role === 'admin';
 
   useEffect(() => {
     if (profile || user) {
@@ -75,23 +72,6 @@ export default function Account() {
   return (
     <div className="min-h-screen bg-background px-6 py-10">
       <div className="max-w-3xl mx-auto space-y-6">
-        
-        {/* Admin Quick Access Banner */}
-        {isAdmin && (
-          <div className="bg-primary/10 border border-primary/20 rounded-3xl p-6 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <ShieldCheck className="text-primary" size={24} />
-              <div>
-                <p className="font-semibold text-primary">Administrator Access</p>
-                <p className="text-xs text-muted-foreground">You have permission to manage app data and users.</p>
-              </div>
-            </div>
-            <Button size="sm" onClick={() => window.location.href = '/admin'} className="gap-2">
-              <Settings size={16} /> Admin Panel
-            </Button>
-          </div>
-        )}
-
         <div className="bg-card rounded-3xl border border-border p-8 shadow-sm">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
@@ -105,7 +85,6 @@ export default function Account() {
           </div>
         </div>
 
-        {/* ... Rest of your existing form and stats UI ... */}
         <div className="bg-card rounded-3xl border border-border p-8 shadow-sm">
           <form onSubmit={handleSave} className="space-y-5">
             <div className="grid gap-4 md:grid-cols-2">
