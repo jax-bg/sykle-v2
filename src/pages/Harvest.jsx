@@ -1,10 +1,7 @@
-const db = globalThis.__B44_DB__ || { 
-  auth: { isAuthenticated: async () => false, me: async () => null, updateMe: async () => ({}) }, 
-  entities: new Proxy({}, { get: () => ({ filter: async () => [], get: async () => null, list: async () => [], create: async () => ({}), update: async () => ({}), delete: async () => ({}), bulkCreate: async () => [] }) }), 
-  integrations: { Core: { UploadFile: async () => ({ file_url: '' }) } } 
-};
-
 import { useState, useEffect } from "react";
+import { supabase } from "@/lib/supabase"; // Reference from Log.jsx
+import { useAuth } from "@/lib/AuthContext"; // Reference from Log.jsx
+
 import { Star, Gift, CheckCircle2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -30,7 +27,226 @@ const CATEGORY_COLORS = {
   discount: "bg-amber-50 text-amber-700 border-amber-200",
 };
 
-// Extracted RewardCard for better performance and readability
+export default function Rewards() {
+  const { user, profile, updateProfile, isLoadingAuth, authChecked } = useAuth();
+  const [rewards, setRewards] = useState([]);
+  const [redemptions, setRedemptions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [redeeming, setRedeeming] = useState(null);
+  const [redeemed, setRedeemed] = useState(null);
+  const [filterCat, setFilterCat] = useState("all");
+  const [tab, setTab] = useState("browse");
+
+  useEffect(() => {
+    if (!isLoadingAuth && authChecked) {
+      loadData();
+    }
+  }, [isLoadingAuth, authChecked, profile]);
+
+  async function loadData() {
+    setLoading(true);
+    const userId = profile?.id || user?.id;
+
+    // 1. Fetch Rewards
+    let { data: rws, error: rwError } = await supabase.from('Reward').select('*');
+    
+    // 2. Initial Setup: If Reward table is empty, seed it
+    if (!rwError && (!rws || rws.length === 0)) {
+      const { error: seedError } = await supabase.from('Reward').insert(DEFAULT_REWARDS);
+      if (!seedError) {
+        const { data: seeded } = await supabase.from('Reward').select('*');
+        rws = seeded;
+      }
+    }
+
+    // 3. Fetch Redemptions for the current user
+    let reds = [];
+    if (userId) {
+      const { data: userReds } = await supabase
+        .from('Redemption')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
+      reds = userReds || [];
+    }
+
+    setRewards(rws || []);
+    setRedemptions(reds);
+    setLoading(false);
+  }
+
+  async function handleRedeem(reward) {
+    const currentPoints = profile?.points || 0;
+    if (currentPoints < reward.points_cost) return;
+    
+    const userId = profile?.id || user?.id;
+    if (!userId) return;
+
+    setRedeeming(reward.id);
+
+    try {
+      const code = `ECO-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+      
+      // 1. Create Redemption Record
+      const { error: redError } = await supabase.from('Redemption').insert([{
+        user_id: userId,
+        reward_id: reward.id,
+        reward_title: reward.title,
+        points_spent: reward.points_cost,
+        code,
+      }]);
+
+      if (redError) throw redError;
+
+      // 2. Update User Points (Profile)
+      const newPoints = currentPoints - reward.points_cost;
+      await updateProfile({ points: newPoints });
+
+      setRedeemed({ ...reward, code });
+      await loadData(); // Refresh history
+    } catch (err) {
+      console.error("Redemption failed:", err);
+    } finally {
+      setRedeeming(null);
+    }
+  }
+
+  const featured = rewards.filter(r => r.featured);
+  const filtered = rewards.filter(r => filterCat === "all" || r.category === filterCat);
+
+  if (loading) return (
+    <div className="flex items-center justify-center min-h-screen">
+      <Loader2 className="w-8 h-8 animate-spin text-primary" />
+    </div>
+  );
+
+  return (
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <div className="bg-gradient-to-br from-[hsl(40,60%,35%)] to-[hsl(30,70%,28%)] text-white px-6 pt-10 pb-8">
+        <div className="max-w-2xl mx-auto">
+          <h1 className="font-display text-3xl font-semibold">Harvest</h1>
+          <p className="text-white/60 text-sm mt-1">Give your seeds and reap your rewards.</p>
+          <div className="flex items-center gap-2 mt-4 bg-white/15 backdrop-blur rounded-2xl px-4 py-3 w-fit">
+            <Star size={18} className="text-amber-400 fill-amber-400" />
+            <span className="font-bold text-xl">{(profile?.points || 0).toLocaleString()}</span>
+            <span className="text-white/70 text-sm">seeds available</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-2xl mx-auto px-4 py-6">
+        {/* Tabs */}
+        <div className="flex gap-2 mb-6 bg-muted p-1 rounded-xl">
+          {["browse", "history"].map(t => (
+            <button
+              key={t}
+              onClick={() => setTab(t)}
+              className={cn(
+                "flex-1 py-2.5 rounded-lg text-sm font-medium transition-all capitalize",
+                tab === t ? "bg-card shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              {t === "browse" ? "🎁 Browse" : "🕐 History"}
+            </button>
+          ))}
+        </div>
+
+        {tab === "browse" ? (
+          <>
+            {/* Featured Section */}
+            {featured.length > 0 && (
+              <div className="mb-6">
+                <h2 className="font-display text-xl font-semibold mb-3">Featured</h2>
+                <div className="space-y-3">
+                  {featured.map(reward => (
+                    <RewardCard 
+                      key={reward.id} 
+                      reward={reward} 
+                      userPoints={profile?.points || 0} 
+                      onRedeem={handleRedeem} 
+                      redeeming={redeeming} 
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Filter tags */}
+            <div className="flex flex-wrap gap-2 mb-4">
+              {["all", "voucher", "donation", "experience", "discount"].map(c => (
+                <button
+                  key={c}
+                  onClick={() => setFilterCat(c)}
+                  className={cn(
+                    "px-3 py-1.5 rounded-lg text-xs font-medium border transition-all capitalize",
+                    filterCat === c ? "bg-primary text-primary-foreground border-primary" : "border-border bg-background hover:bg-muted"
+                  )}
+                >
+                  {c === "all" ? "All" : CATEGORY_LABELS[c]}
+                </button>
+              ))}
+            </div>
+
+            <div className="space-y-3">
+              {filtered.map(reward => (
+                <RewardCard 
+                  key={reward.id} 
+                  reward={reward} 
+                  userPoints={profile?.points || 0} 
+                  onRedeem={handleRedeem} 
+                  redeeming={redeeming} 
+                />
+              ))}
+            </div>
+          </>
+        ) : (
+          <div className="space-y-3">
+            {redemptions.length === 0 ? (
+              <div className="text-center py-12 text-muted-foreground">
+                <p className="text-4xl mb-3">🎫</p>
+                <p className="font-medium">No redemptions yet</p>
+                <p className="text-sm mt-1">Browse rewards to use your points!</p>
+              </div>
+            ) : redemptions.map(r => (
+              <div key={r.id} className="bg-card border border-border/60 rounded-2xl p-5">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center">
+                    <Gift size={20} className="text-amber-600" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-semibold text-sm">{r.reward_title}</p>
+                    <p className="text-xs text-muted-foreground">Code: <span className="font-mono font-bold text-primary">{r.code}</span></p>
+                  </div>
+                  <p className="text-sm font-bold text-destructive">-{r.points_spent} pts</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Redemption Success Modal */}
+      {redeemed && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4" onClick={() => setRedeemed(null)}>
+          <div className="bg-card rounded-3xl p-8 max-w-sm w-full shadow-2xl text-center" onClick={e => e.stopPropagation()}>
+            <div className="text-5xl mb-4">{redeemed.emoji}</div>
+            <CheckCircle2 size={48} className="text-green-500 mx-auto mb-3" />
+            <h3 className="font-display text-xl font-semibold mb-1">Redeemed!</h3>
+            <p className="text-muted-foreground text-sm mb-4">{redeemed.title}</p>
+            <div className="bg-muted rounded-2xl px-6 py-4 mb-6">
+              <p className="text-xs text-muted-foreground mb-1">Your Code</p>
+              <p className="text-2xl font-mono font-bold text-primary tracking-widest">{redeemed.code}</p>
+            </div>
+            <p className="text-xs text-muted-foreground mb-4">Present this code to {redeemed.partner} to claim your reward.</p>
+            <Button onClick={() => setRedeemed(null)} className="w-full rounded-xl">Done</Button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function RewardCard({ reward, userPoints, onRedeem, redeeming }) {
   const canAfford = userPoints >= reward.points_cost;
   const isRedeeming = redeeming === reward.id;
@@ -70,188 +286,6 @@ function RewardCard({ reward, userPoints, onRedeem, redeeming }) {
           </div>
         </div>
       </div>
-    </div>
-  );
-}
-
-export default function Rewards() {
-  const [user, setUser] = useState(null);
-  const [rewards, setRewards] = useState([]);
-  const [redemptions, setRedemptions] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [redeeming, setRedeeming] = useState(null);
-  const [redeemed, setRedeemed] = useState(null);
-  const [filterCat, setFilterCat] = useState("all");
-  const [tab, setTab] = useState("browse");
-
-  useEffect(() => { loadData(); }, []);
-
-  async function loadData() {
-    try {
-      let [me, rws, reds] = await Promise.all([
-        db.auth.me(),
-        db.entities.Reward.list(),
-        db.entities.Redemption.list("-created_date", 50),
-      ]);
-      
-      if (rws.length === 0) {
-        await db.entities.Reward.bulkCreate(DEFAULT_REWARDS);
-        rws = await db.entities.Reward.list();
-      }
-      
-      setUser(me);
-      setRewards(rws);
-      setRedemptions(reds);
-    } catch (error) {
-      console.error("Failed to load data:", error);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function handleRedeem(reward) {
-    if ((user?.points || 0) < reward.points_cost) return;
-    setRedeeming(reward.id);
-    try {
-      const code = `ECO-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
-      await db.entities.Redemption.create({
-        reward_id: reward.id,
-        reward_title: reward.title,
-        points_spent: reward.points_cost,
-        code,
-      });
-      const newPoints = (user?.points || 0) - reward.points_cost;
-      await db.auth.updateMe({ points: newPoints });
-      setUser(u => ({ ...u, points: newPoints }));
-      setRedeemed({ ...reward, code });
-      await loadData();
-    } catch (err) {
-      console.error("Redemption failed:", err);
-    } finally {
-      setRedeeming(null);
-    }
-  }
-
-  const featured = rewards.filter(r => r.featured);
-  const filtered = rewards.filter(r => filterCat === "all" || r.category === filterCat);
-
-  if (loading) return (
-    <div className="flex items-center justify-center min-h-screen">
-      <div className="w-8 h-8 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
-    </div>
-  );
-
-  return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <div className="bg-gradient-to-br from-[hsl(40,60%,35%)] to-[hsl(30,70%,28%)] text-white px-6 pt-10 pb-8">
-        <div className="max-w-2xl mx-auto">
-          <h1 className="font-display text-3xl font-semibold">Harvest</h1>
-          <p className="text-white/60 text-sm mt-1">Give your seeds and reap your rewards.</p>
-          <div className="flex items-center gap-2 mt-4 bg-white/15 backdrop-blur rounded-2xl px-4 py-3 w-fit">
-            <Star size={18} className="text-amber-400 fill-amber-400" />
-            <span className="font-bold text-xl">{(user?.points || 0).toLocaleString()}</span>
-            <span className="text-white/70 text-sm">seeds available</span>
-          </div>
-        </div>
-      </div>
-
-      <div className="max-w-2xl mx-auto px-4 py-6">
-        {/* Tabs */}
-        <div className="flex gap-2 mb-6 bg-muted p-1 rounded-xl">
-          {["browse", "history"].map(t => (
-            <button
-              key={t}
-              onClick={() => setTab(t)}
-              className={cn(
-                "flex-1 py-2.5 rounded-lg text-sm font-medium transition-all capitalize",
-                tab === t ? "bg-card shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              {t === "browse" ? "🎁 Browse" : "🕐 History"}
-            </button>
-          ))}
-        </div>
-
-        {tab === "browse" ? (
-          <>
-            {/* Featured */}
-            {featured.length > 0 && (
-              <div className="mb-6">
-                <h2 className="font-display text-xl font-semibold mb-3">Featured</h2>
-                <div className="space-y-3">
-                  {featured.map(reward => (
-                    <RewardCard key={reward.id} reward={reward} userPoints={user?.points || 0} onRedeem={handleRedeem} redeeming={redeeming} />
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Filter tabs */}
-            <div className="flex flex-wrap gap-2 mb-4">
-              {["all", "voucher", "donation", "experience", "discount"].map(c => (
-                <button
-                  key={c}
-                  onClick={() => setFilterCat(c)}
-                  className={cn(
-                    "px-3 py-1.5 rounded-lg text-xs font-medium border transition-all capitalize",
-                    filterCat === c ? "bg-primary text-primary-foreground border-primary" : "border-border bg-background hover:bg-muted"
-                  )}
-                >
-                  {c === "all" ? "All" : CATEGORY_LABELS[c]}
-                </button>
-              ))}
-            </div>
-
-            <div className="space-y-3">
-              {filtered.map(reward => (
-                <RewardCard key={reward.id} reward={reward} userPoints={user?.points || 0} onRedeem={handleRedeem} redeeming={redeeming} />
-              ))}
-            </div>
-          </>
-        ) : (
-          <div className="space-y-3">
-            {redemptions.length === 0 ? (
-              <div className="text-center py-12 text-muted-foreground">
-                <p className="text-4xl mb-3">🎫</p>
-                <p className="font-medium">No redemptions yet</p>
-                <p className="text-sm mt-1">Browse rewards to use your points!</p>
-              </div>
-            ) : redemptions.map(r => (
-              <div key={r.id} className="bg-card border border-border/60 rounded-2xl p-5">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center">
-                    <Gift size={20} className="text-amber-600" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-semibold text-sm">{r.reward_title}</p>
-                    <p className="text-xs text-muted-foreground">Code: <span className="font-mono font-bold text-primary">{r.code}</span></p>
-                  </div>
-                  <p className="text-sm font-bold text-destructive">-{r.points_spent} pts</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Redemption success modal */}
-      {redeemed && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4" onClick={() => setRedeemed(null)}>
-          <div className="bg-card rounded-3xl p-8 max-w-sm w-full shadow-2xl text-center" onClick={e => e.stopPropagation()}>
-            <div className="text-5xl mb-4">{redeemed.emoji}</div>
-            <CheckCircle2 size={48} className="text-green-500 mx-auto mb-3" />
-            <h3 className="font-display text-xl font-semibold mb-1">Redeemed!</h3>
-            <p className="text-muted-foreground text-sm mb-4">{redeemed.title}</p>
-            <div className="bg-muted rounded-2xl px-6 py-4 mb-6">
-              <p className="text-xs text-muted-foreground mb-1">Your Code</p>
-              <p className="text-2xl font-mono font-bold text-primary tracking-widest">{redeemed.code}</p>
-            </div>
-            <p className="text-xs text-muted-foreground mb-4">Present this code to {redeemed.partner} to claim your reward.</p>
-            <Button onClick={() => setRedeemed(null)} className="w-full rounded-xl">Done</Button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
