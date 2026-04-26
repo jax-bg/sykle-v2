@@ -1,272 +1,93 @@
 // @ts-nocheck
 import { supabase } from "@/lib/supabase";
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Camera, Search, X, Loader2, AlertCircle, RefreshCw, History, ChevronRight } from "lucide-react";
+import { Camera, Search, X, Loader2, AlertCircle, Leaf, Package, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import { useAuth } from "@/lib/AuthContext";
 
 const ECO_GRADES = {
   a: { label: "Excellent", color: "bg-green-500", text: "text-green-700", bg: "bg-green-50", border: "border-green-200", emoji: "🌿" },
   b: { label: "Good", color: "bg-lime-500", text: "text-lime-700", bg: "bg-lime-50", border: "border-lime-200", emoji: "🍃" },
   c: { label: "Moderate", color: "bg-yellow-400", text: "text-yellow-700", bg: "bg-yellow-50", border: "border-yellow-200", emoji: "⚡" },
   d: { label: "Poor", color: "bg-orange-500", text: "text-orange-700", bg: "bg-orange-50", border: "border-orange-200", emoji: "⚠️" },
-  e: { label: "Bad", color: "bg-red-500", text: "text-red-700", bg: "bg-red-50", border: "border-red-200", emoji: "🚨" },
+  e: { label: "Critical", color: "bg-red-500", text: "text-red-700", bg: "bg-red-50", border: "border-red-200", emoji: "🚫" },
 };
 
-const TIPS = {
-  a: "Great choice! This product has minimal environmental impact.",
-  b: "A solid eco-friendly option with low environmental impact.",
-  c: "Moderate impact — consider this occasionally but look for greener alternatives.",
-  d: "High environmental impact. Try to find a greener alternative.",
-  e: "Very high environmental impact. We recommend choosing a greener product.",
-};
-
-const ECOSCORE_ADJUSTMENT_LABELS = {
-  packaging: "Packaging",
-  origins: "Origin",
-  production_system: "Production system",
-  ingredients: "Ingredients quality",
-  additives: "Additives",
-  labels: "Environmental labels",
-  no_environment_labels: "No environmental labels",
-  air_transportation: "Air transportation",
-  threatened_species: "Threatened species",
-  water_use: "Water use",
-  score: "Score",
-};
-
-function formatEcoscoreAdjustment(value) {
-  if (value == null) return "Unknown";
-  if (typeof value === "string") return value;
-  if (typeof value === "number") return String(value);
-  if (Array.isArray(value)) return value.map(v => formatEcoscoreAdjustment(v)).join(", ");
-  if (typeof value === "object") {
-    if (value.value) return String(value.value);
-    if (value.label) return String(value.label);
-    return Object.values(value).map(v => formatEcoscoreAdjustment(v)).filter(Boolean).join(", ");
-  }
-  return String(value);
-}
-
-async function fetchProduct(barcode) {
-  const fields = "product_name,ecoscore_grade,ecoscore_score,image_front_url,brands,packaging_tags,origins_tags,ingredients_text,nova_group,labels_tags,categories_tags,countries_tags,ecoscore_data";
-  // Try multiple endpoints for reliability
-  const urls = [
-    `https://world.openfoodfacts.org/api/v2/product/${barcode}?fields=${fields}`,
-    `https://world.openfoodfacts.net/api/v2/product/${barcode}?fields=${fields}`,
-  ];
-  let lastErr;
-  for (const url of urls) {
-    try {
-      const res = await fetch(url, {
-        headers: { "User-Agent": "EcoJourneyUAE/1.0 (contact@ecojourneyuae.com)" }
-      });
-      if (!res.ok) continue;
-      const data = await res.json();
-      if (data.status === 1 && data.product) return data.product;
-      throw new Error("Product not found");
-    } catch (e) {
-      lastErr = e;
-    }
-  }
-  throw lastErr || new Error("Product not found");
-}
-
-const HISTORY_TABLES = ["ScanHistory", "scan_history"];
-
-function isTableNotFoundError(error) {
-  const msg = error?.message || "";
-  return /(does not exist|relation .* does not exist|table .* does not exist)/i.test(msg);
-}
-
-async function getCurrentUserId() {
-  try {
-    const { data, error } = await supabase.auth.getUser();
-    if (error) {
-      console.warn("Supabase getUser failed:", error);
-      return null;
-    }
-    return data?.user?.id ?? null;
-  } catch (err) {
-    console.warn("Supabase getUser unexpected error:", err);
-    return null;
-  }
-}
-
-async function selectHistoryRows(limit = 50) {
-  const userId = await getCurrentUserId();
-  if (!userId) {
-    return { data: [], table: null };
-  }
-
-  let lastError;
-  for (const table of HISTORY_TABLES) {
-    const { data, error } = await supabase
-      .from(table)
-      .select("*")
-      .eq("user_id", userId)
-      .order("created_at", { ascending: false })
-      .limit(limit);
-
-    if (!error) return { data, table };
-    lastError = error;
-    if (!isTableNotFoundError(error)) throw error;
-  }
-
-  throw lastError || new Error("History table not found");
-}
-
-async function insertHistoryRow(record) {
-  const userId = await getCurrentUserId();
-  if (!userId) {
-    throw new Error("Not authenticated: history requires a signed-in user.");
-  }
-  const payload = { ...record, user_id: userId };
-
-  let lastError;
-  for (const table of HISTORY_TABLES) {
-    const { error } = await supabase.from(table).insert([payload]);
-    if (!error) return table;
-    lastError = error;
-    if (!isTableNotFoundError(error)) throw error;
-  }
-
-  throw lastError || new Error("History table not found");
-}
-
-function GradeCard({ grade, score }) {
-  const g = grade?.toLowerCase();
-  const info = g && ECO_GRADES[g];
-  if (!info) return (
-    <div className="flex items-center gap-3 bg-muted rounded-xl border border-border p-4 text-muted-foreground">
-      <span className="text-2xl">❓</span>
-      <div>
-        <p className="font-medium text-sm">Eco-Score not available</p>
-        <p className="text-xs">Not enough data for this product.</p>
-      </div>
-    </div>
-  );
-  return (
-    <div className={cn("flex items-center gap-4 rounded-xl border p-4", info.bg, info.border)}>
-      <div className={cn("w-14 h-14 rounded-xl flex items-center justify-center text-white font-bold text-2xl shrink-0", info.color)}>
-        {g.toUpperCase()}
-      </div>
-      <div>
-        <p className={cn("font-bold text-lg leading-tight", info.text)}>{info.emoji} Eco-Score: {info.label}</p>
-        {score != null && <p className={cn("text-sm", info.text)}>{score}/100 environmental score</p>}
-        <p className={cn("text-xs mt-1", info.text)}>{TIPS[g]}</p>
-      </div>
-    </div>
-  );
-}
-
-function ProductCard({ product, onScanAnother }) {
-  const origins = product.origins_tags?.slice(0, 1).map(t => t.replace("en:", "").replace(/-/g, " ")).join(", ");
-  const packaging = product.packaging_tags?.slice(0, 2).map(t => t.replace("en:", "").replace(/-/g, " ")).join(", ");
-  const ingredients = product.ingredients_text;
-  const labels = product.labels_tags?.slice(0, 4).map(t => t.replace(/^en:/, "").replace(/_/g, " "));
-  const categories = product.categories_tags?.slice(0, 4).map(t => t.replace(/^en:/, "").replace(/_/g, " "));
-  const countries = product.countries_tags?.slice(0, 3).map(t => t.replace(/^en:/, "").replace(/_/g, " "));
-  const agribalyseScore = product.ecoscore_data?.agribalyse?.score;
-  const adjustments = product.ecoscore_data?.adjustments || {};
-  const adjustmentEntries = Object.entries(adjustments).filter(([, value]) => value != null && value !== "" && !(Array.isArray(value) && value.length === 0));
+const ProductCard = ({ product, onScanAnother }) => {
+  const grade = product.ecoscore_grade?.toLowerCase() || 'c';
+  const style = ECO_GRADES[grade] || ECO_GRADES.c;
 
   return (
-    <div className="space-y-4 animate-slide-up">
-      <div className="bg-card border border-border/60 rounded-2xl shadow-sm overflow-hidden">
-        <div className="flex gap-4 p-5">
-          {product.image_front_url || product.image_url ? (
-            <img
-              src={product.image_front_url || product.image_url}
-              alt={product.product_name}
-              className="w-24 h-24 object-contain rounded-xl bg-muted shrink-0"
-            />
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      {/* Main Product Info */}
+      <div className="bg-card rounded-3xl border border-border p-6 shadow-sm">
+        <div className="flex items-center gap-4 mb-6">
+          {product.image_url ? (
+            <img src={product.image_url} alt={product.product_name} className="w-20 h-20 object-contain rounded-xl bg-white p-1 border" />
           ) : (
-            <div className="w-24 h-24 rounded-xl bg-muted flex items-center justify-center text-3xl shrink-0">🛒</div>
+            <div className="w-20 h-20 bg-muted rounded-xl flex items-center justify-center text-muted-foreground"><Package size={32} /></div>
           )}
-          <div className="flex-1 min-w-0">
-            <p className="font-semibold text-base leading-tight">{product.product_name || "Unknown Product"}</p>
-            {product.brands && <p className="text-xs text-muted-foreground mt-1">{product.brands}</p>}
-            <p className="text-xs text-muted-foreground mt-0.5">Barcode: {product.barcode}</p>
+          <div>
+            <h2 className="text-xl font-bold leading-tight">{product.product_name || "Unknown Product"}</h2>
+            <p className="text-sm text-muted-foreground">{product.brands || "Brand unavailable"}</p>
           </div>
         </div>
 
-        <div className="px-5 pb-4">
-          <GradeCard grade={product.ecoscore_grade} score={product.ecoscore_score} />
+        {/* Eco-Score Primary Display */}
+        <div className={cn("rounded-2xl p-5 border-2 flex items-center justify-between", style.bg, style.border)}>
+          <div className="space-y-1">
+            <p className={cn("text-xs font-bold uppercase tracking-widest", style.text)}>Eco-Score</p>
+            <p className="text-2xl font-black">{style.label} {style.emoji}</p>
+          </div>
+          <div className={cn("w-14 h-14 rounded-xl flex items-center justify-center text-3xl font-black text-white shadow-sm", style.color)}>
+            {grade.toUpperCase()}
+          </div>
         </div>
-
-        {(origins || packaging) && (
-          <div className="px-5 pb-5 grid grid-cols-2 gap-3">
-            {origins && (
-              <div className="bg-muted rounded-xl p-3">
-                <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide mb-1">Origin</p>
-                <p className="text-sm font-medium capitalize">{origins}</p>
-              </div>
-            )}
-            {packaging && (
-              <div className="bg-muted rounded-xl p-3">
-                <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide mb-1">Packaging</p>
-                <p className="text-sm font-medium capitalize">{packaging}</p>
-              </div>
-            )}
-          </div>
-        )}
-
-        {(adjustmentEntries.length > 0 || agribalyseScore != null || ingredients || labels?.length || categories?.length || countries?.length) && (
-          <div className="px-5 pb-5 space-y-4">
-            <div className="bg-muted rounded-2xl p-5">
-              <p className="text-sm font-semibold mb-3">Eco-Score details from Open Food Facts</p>
-              <div className="grid gap-3">
-                {agribalyseScore != null && (
-                  <div className="bg-card border border-border/60 rounded-xl p-3">
-                    <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Agribalyse score</p>
-                    <p className="text-sm font-medium">{agribalyseScore}</p>
-                  </div>
-                )}
-                {adjustmentEntries.map(([key, value]) => (
-                  <div key={key} className="bg-card border border-border/60 rounded-xl p-3">
-                    <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">{ECOSCORE_ADJUSTMENT_LABELS[key] ?? key.replace(/_/g, " ")}</p>
-                    <p className="text-sm font-medium">{formatEcoscoreAdjustment(value)}</p>
-                  </div>
-                ))}
-                {ingredients && (
-                  <div className="bg-card border border-border/60 rounded-xl p-3">
-                    <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Ingredients</p>
-                    <p className="text-sm leading-snug">{ingredients}</p>
-                  </div>
-                )}
-                {labels?.length > 0 && (
-                  <div className="bg-card border border-border/60 rounded-xl p-3">
-                    <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Labels</p>
-                    <p className="text-sm font-medium">{labels.join(", ")}</p>
-                  </div>
-                )}
-                {categories?.length > 0 && (
-                  <div className="bg-card border border-border/60 rounded-xl p-3">
-                    <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Categories</p>
-                    <p className="text-sm font-medium">{categories.join(", ")}</p>
-                  </div>
-                )}
-                {countries?.length > 0 && (
-                  <div className="bg-card border border-border/60 rounded-xl p-3">
-                    <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Countries</p>
-                    <p className="text-sm font-medium">{countries.join(", ")}</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
       </div>
 
-      <Button onClick={onScanAnother} variant="outline" className="w-full h-12 rounded-xl gap-2">
-        <RefreshCw size={16} /> Scan Another Product
+      {/* Environmental Details Section */}
+      <div className="grid gap-4">
+        <div className="bg-white rounded-2xl border border-border p-5 flex items-start gap-4">
+          <div className="p-2 bg-teal-50 rounded-lg text-teal-600"><Leaf size={20} /></div>
+          <div>
+            <p className="text-sm font-semibold">Ingredients Analysis</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              {product.ingredients_analysis_tags?.includes('en:palm-oil-free') ? "✓ Palm oil free" : "⚠️ May contain palm oil"}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {product.ingredients_analysis_tags?.includes('en:vegan') ? "✓ Vegan friendly" : ""}
+            </p>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl border border-border p-5 flex items-start gap-4">
+          <div className="p-2 bg-blue-50 rounded-lg text-blue-600"><Package size={20} /></div>
+          <div>
+            <p className="text-sm font-semibold">Packaging Impact</p>
+            <p className="text-xs text-muted-foreground mt-1 lowercase">
+              {product.packaging_text || "Packaging details not fully specified by manufacturer."}
+            </p>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl border border-border p-5 flex items-start gap-4">
+          <div className="p-2 bg-orange-50 rounded-lg text-orange-600"><Globe size={20} /></div>
+          <div>
+            <p className="text-sm font-semibold">Origin & Traceability</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              {product.origins || "Origins not specified."}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <Button onClick={onScanAnother} variant="outline" className="w-full rounded-2xl py-6 border-dashed border-2 hover:bg-muted/50">
+        Scan another product
       </Button>
     </div>
   );
-}
+};
 
 function HistoryList({ history, onSelect }) {
   if (history.length === 0) return (
