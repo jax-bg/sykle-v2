@@ -1,7 +1,15 @@
 // @ts-nocheck
-import { supabase, selectHistoryRows, insertHistoryRow, fetchProduct } from "@/lib/supabase";
+import { 
+  supabase, 
+  selectHistoryRows, 
+  insertHistoryRow, 
+  fetchProduct 
+} from "@/lib/supabase";
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Camera, Search, X, Loader2, AlertCircle, Leaf, Package, Globe, History, ChevronRight } from "lucide-react";
+import { 
+  Camera, Search, X, Loader2, AlertCircle, 
+  Leaf, Package, Globe, History, ChevronRight 
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/lib/AuthContext";
@@ -16,13 +24,11 @@ const ECO_GRADES = {
 };
 
 const ProductCard = ({ product, onScanAnother }) => {
-  // Guard: Default to 'c' if grade is missing to prevent styling crashes
   const grade = product?.ecoscore_grade?.toLowerCase() || 'c';
   const style = ECO_GRADES[grade] || ECO_GRADES.c;
 
   return (
     <div className="space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      {/* Product Header Card */}
       <div className="bg-card rounded-3xl border border-border p-6 shadow-sm">
         <div className="flex items-center gap-4 mb-6">
           {product?.image_url ? (
@@ -46,7 +52,6 @@ const ProductCard = ({ product, onScanAnother }) => {
           </div>
         </div>
 
-        {/* Eco-Score Primary Badge */}
         <div className={cn("rounded-2xl p-5 border-2 flex items-center justify-between", style.bg, style.border)}>
           <div className="space-y-1">
             <p className={cn("text-[10px] font-black uppercase tracking-widest opacity-70", style.text)}>
@@ -60,9 +65,7 @@ const ProductCard = ({ product, onScanAnother }) => {
         </div>
       </div>
 
-      {/* Environmental Details - Clean & Structured */}
       <div className="grid gap-3">
-        {/* Packaging Detail */}
         <div className="bg-white/50 rounded-2xl border border-border p-4 flex items-start gap-4">
           <div className="p-2 bg-blue-50 rounded-lg text-blue-600">
             <Package size={18} />
@@ -70,12 +73,11 @@ const ProductCard = ({ product, onScanAnother }) => {
           <div>
             <p className="text-sm font-bold">Packaging</p>
             <p className="text-xs text-muted-foreground leading-relaxed">
-              {product?.packaging_text || "No specific packaging data found."}
+              {product?.packaging || "No specific packaging data found."}
             </p>
           </div>
         </div>
 
-        {/* Origin Detail */}
         <div className="bg-white/50 rounded-2xl border border-border p-4 flex items-start gap-4">
           <div className="p-2 bg-orange-50 rounded-lg text-orange-600">
             <Globe size={18} />
@@ -88,7 +90,6 @@ const ProductCard = ({ product, onScanAnother }) => {
           </div>
         </div>
 
-        {/* Sustainability Tags */}
         <div className="bg-white/50 rounded-2xl border border-border p-4 flex items-start gap-4">
           <div className="p-2 bg-green-50 rounded-lg text-green-600">
             <Leaf size={18} />
@@ -96,8 +97,8 @@ const ProductCard = ({ product, onScanAnother }) => {
           <div>
             <p className="text-sm font-bold">Sustainability Analysis</p>
             <div className="flex flex-wrap gap-2 mt-2">
-              {product?.ingredients_analysis_tags && product.ingredients_analysis_tags.length > 0 ? (
-                product.ingredients_analysis_tags.map((tag) => (
+              {product?.analysis_tags && product.analysis_tags.length > 0 ? (
+                product.analysis_tags.map((tag) => (
                   <span 
                     key={tag} 
                     className="text-[10px] bg-muted px-2 py-1 rounded-full font-medium capitalize"
@@ -152,7 +153,7 @@ function HistoryList({ history, onSelect }) {
             <div className="flex-1 min-w-0">
               <p className="font-medium text-sm truncate">{item.product_name || "Unknown Product"}</p>
               {item.brands && <p className="text-xs text-muted-foreground truncate">{item.brands}</p>}
-              <p className="text-xs text-muted-foreground">{new Date(item.created_date).toLocaleDateString()}</p>
+              <p className="text-xs text-muted-foreground">{new Date(item.created_at).toLocaleDateString()}</p>
             </div>
             <div className="flex items-center gap-2 shrink-0">
               {info ? (
@@ -178,8 +179,8 @@ export default function Scanner() {
   const scanningRef = useRef(false);
   const animRef = useRef(null);
 
-  const { isAuthenticated, navigateToLogin } = useAuth();
-  const [tab, setTab] = useState("scan"); // scan | history
+  const { isAuthenticated } = useAuth();
+  const [tab, setTab] = useState("scan");
   const [mode, setMode] = useState("idle");
   const [manualBarcode, setManualBarcode] = useState("");
   const [loading, setLoading] = useState(false);
@@ -193,30 +194,36 @@ export default function Scanner() {
 
   useEffect(() => {
     if (!navigator.mediaDevices?.getUserMedia) setCameraSupported(false);
-    if ("BarcodeDetector" in window) {
+    
+    // Fix for Illegal Constructor Error
+    if ("BarcodeDetector" in window && typeof window.BarcodeDetector === "function") {
       setBarcodeDetectorSupported(true);
-      detectorRef.current = new window.BarcodeDetector({ formats: ["ean_13", "ean_8", "upc_a", "upc_e", "code_128"] });
+      try {
+        detectorRef.current = new window.BarcodeDetector({ 
+          formats: ["ean_13", "ean_8", "upc_a", "upc_e", "code_128"] 
+        });
+      } catch (e) {
+        console.warn("BarcodeDetector init failed", e);
+        setBarcodeDetectorSupported(false);
+      }
     }
+    
     loadHistory();
     return () => stopCamera();
   }, []);
 
-async function loadHistory() {
-  setHistoryLoading(true);
-  try {
-    const { data } = await selectHistoryRows(50);
-
-    setHistory((data || []).map(item => ({
-      ...item,
-      created_date: item.created_date ?? item.created_at,
-    })));
-  } catch (err) {
-    console.error("History refresh failed:", err);
-    setError("Failed to load history: " + (err?.message || err));
-  } finally {
-    setHistoryLoading(false);
+  async function loadHistory() {
+    if (!isAuthenticated) return;
+    setHistoryLoading(true);
+    try {
+      const { data } = await selectHistoryRows(50);
+      setHistory(data || []);
+    } catch (err) {
+      console.error("History refresh failed:", err);
+    } finally {
+      setHistoryLoading(false);
+    }
   }
-}
 
   function stopCamera() {
     if (animRef.current) cancelAnimationFrame(animRef.current);
@@ -267,41 +274,49 @@ async function loadHistory() {
     animRef.current = requestAnimationFrame(scanFrame);
   }, []);
 
-async function lookupBarcode(barcode) {
-  setLoading(true);
-  setError(null);
-  setProduct(null);
-  
-  try {
-    const p = await fetchProduct(barcode);
-    const result = { ...p, barcode };
-    setProduct(result);
-
-    if (!isAuthenticated) {
-      setError("Sign in to save this scan to your history.");
-      return;
-    }
-
-    await insertHistoryRow({
-      barcode: barcode,
-      product_name: p.product_name || "Unknown Product",
-      brands: p.brands || "",
-      ecoscore_grade: p.ecoscore_grade || "",
-      ecoscore_score: p.ecoscore_score ?? null,
-      image_url: p.image_front_url || "",
-      origins: p.origins_tags?.slice(0, 1).map(t => t.replace("en:", "").replace(/-/g, " ")).join(", ") || "",
-      packaging: p.packaging_tags?.slice(0, 2).map(t => t.replace("en:", "").replace(/-/g, " ")).join(", ") || "",
-    });
-
-    await loadHistory();
+  async function lookupBarcode(barcode) {
+    setLoading(true);
+    setError(null);
+    setProduct(null);
     
-  } catch (err) {
-    console.error("History save failed:", err);
-    setError("Failed to save to history: " + (err?.message || err));
-  } finally {
-    setLoading(false);
+    try {
+      const p = await fetchProduct(barcode);
+      
+      const environmentalData = {
+        product_name: p.product_name || "Unknown Product",
+        brands: p.brands || "",
+        ecoscore_grade: p.ecoscore_grade || "c",
+        ecoscore_score: p.ecoscore_score ?? null,
+        image_url: p.image_front_url || "",
+        origins: p.origins || "Unknown origin",
+        packaging: p.packaging_text_en || p.packaging || "No data",
+        analysis_tags: p.ingredients_analysis_tags || []
+      };
+
+      setProduct(environmentalData);
+
+      if (isAuthenticated) {
+        await insertHistoryRow({
+          barcode: barcode,
+          product_name: environmentalData.product_name,
+          brands: environmentalData.brands,
+          ecoscore_grade: environmentalData.ecoscore_grade,
+          ecoscore_score: environmentalData.ecoscore_score,
+          image_url: environmentalData.image_url,
+          origins: environmentalData.origins,
+          packaging: environmentalData.packaging,
+        });
+        await loadHistory();
+      } else {
+        setError("Sign in to save this scan to your history.");
+      }
+      
+    } catch (err) {
+      setError("Product not found or network error.");
+    } finally {
+      setLoading(false);
+    }
   }
-}
 
   async function handleManualSearch(e) {
     e.preventDefault();
@@ -319,23 +334,12 @@ async function lookupBarcode(barcode) {
   }
 
   function selectHistoryItem(item) {
-    // Reconstruct product-like object from history record
-    setProduct({
-      barcode: item.barcode,
-      product_name: item.product_name,
-      brands: item.brands,
-      ecoscore_grade: item.ecoscore_grade,
-      ecoscore_score: item.ecoscore_score,
-      image_front_url: item.image_url,
-      origins_tags: item.origins ? [`en:${item.origins}`] : [],
-      packaging_tags: item.packaging ? item.packaging.split(", ").map(p => `en:${p}`) : [],
-    });
+    setProduct(item);
     setTab("scan");
   }
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
       <div className="bg-gradient-to-br from-primary to-[hsl(178,60%,20%)] text-primary-foreground px-6 pt-10 pb-8">
         <div className="max-w-2xl mx-auto">
           <h1 className="font-display text-3xl font-semibold">Glean</h1>
@@ -343,7 +347,6 @@ async function lookupBarcode(barcode) {
         </div>
       </div>
 
-      {/* Tabs */}
       <div className="max-w-2xl mx-auto px-6 pt-5">
         <div className="grid grid-cols-2 gap-2 bg-muted p-1 rounded-xl mb-6">
           {[{ id: "scan", label: "Scanner", icon: Camera }, { id: "history", label: "History", icon: History }].map(({ id, label, icon: Icon }) => (
@@ -375,34 +378,26 @@ async function lookupBarcode(barcode) {
           )
         ) : (
           <>
-            {/* Camera view */}
             {mode === "camera" && (
               <div className="relative rounded-2xl overflow-hidden bg-black aspect-video shadow-lg">
                 <video ref={videoRef} className="w-full h-full object-cover" muted playsInline />
                 <div className="absolute inset-0 flex items-center justify-center">
                   <div className="w-56 h-32 border-2 border-white/70 rounded-xl relative">
-                    <div className="absolute top-0 left-0 w-5 h-5 border-t-4 border-l-4 border-gold rounded-tl-md" />
-                    <div className="absolute top-0 right-0 w-5 h-5 border-t-4 border-r-4 border-gold rounded-tr-md" />
-                    <div className="absolute bottom-0 left-0 w-5 h-5 border-b-4 border-l-4 border-gold rounded-bl-md" />
-                    <div className="absolute bottom-0 right-0 w-5 h-5 border-b-4 border-r-4 border-gold rounded-br-md" />
+                    <div className="absolute top-0 left-0 w-5 h-5 border-t-4 border-l-4 border-yellow-400 rounded-tl-md" />
+                    <div className="absolute top-0 right-0 w-5 h-5 border-t-4 border-r-4 border-yellow-400 rounded-tr-md" />
+                    <div className="absolute bottom-0 left-0 w-5 h-5 border-b-4 border-l-4 border-yellow-400 rounded-bl-md" />
+                    <div className="absolute bottom-0 right-0 w-5 h-5 border-b-4 border-r-4 border-yellow-400 rounded-br-md" />
                   </div>
-                </div>
-                <div className="absolute bottom-4 left-0 right-0 text-center">
-                  {barcodeDetectorSupported
-                    ? <p className="text-white/80 text-xs bg-black/40 inline-block px-3 py-1 rounded-full">Point at a barcode</p>
-                    : <p className="text-white/80 text-xs bg-black/40 inline-block px-3 py-1 rounded-full">Enter barcode below</p>
-                  }
                 </div>
                 <button
                   onClick={reset}
-                  className="absolute top-3 right-3 w-8 h-8 bg-black/50 rounded-full flex items-center justify-center text-white hover:bg-black/70 transition-colors"
+                  className="absolute top-3 right-3 w-8 h-8 bg-black/50 rounded-full flex items-center justify-center text-white"
                 >
                   <X size={16} />
                 </button>
               </div>
             )}
 
-            {/* Idle buttons */}
             {mode === "idle" && !loading && !product && (
               <div className="space-y-3">
                 {cameraSupported && (
@@ -412,7 +407,7 @@ async function lookupBarcode(barcode) {
                 )}
                 <Button
                   variant="outline"
-                  onClick={() => { setMode("manual"); setError(null); setProduct(null); }}
+                  onClick={() => setMode("manual")}
                   className="w-full h-14 rounded-2xl text-base font-semibold gap-3"
                 >
                   <Search size={20} /> Enter Barcode Manually
@@ -420,7 +415,6 @@ async function lookupBarcode(barcode) {
               </div>
             )}
 
-            {/* Manual entry */}
             {(mode === "manual" || mode === "camera") && !loading && !product && (
               <form onSubmit={handleManualSearch} className="flex gap-3">
                 <Input
@@ -428,9 +422,8 @@ async function lookupBarcode(barcode) {
                   inputMode="numeric"
                   value={manualBarcode}
                   onChange={e => setManualBarcode(e.target.value)}
-                  placeholder="Enter barcode (e.g. 3017624010701)"
+                  placeholder="Enter barcode..."
                   className="h-12 rounded-xl flex-1"
-                  autoFocus={mode === "manual"}
                 />
                 <Button type="submit" className="h-12 rounded-xl px-5">
                   <Search size={18} />
@@ -438,36 +431,23 @@ async function lookupBarcode(barcode) {
               </form>
             )}
 
-            {/* Loading */}
             {loading && (
               <div className="flex flex-col items-center justify-center py-16 gap-4">
                 <Loader2 size={40} className="animate-spin text-primary" />
-                <p className="text-muted-foreground text-sm">Looking up product…</p>
+                <p className="text-muted-foreground text-sm">Gleaning product info…</p>
               </div>
             )}
 
-            {/* Error */}
             {error && (
               <div className="flex items-center gap-3 bg-red-50 border border-red-200 rounded-2xl px-5 py-4 text-red-700">
                 <AlertCircle size={20} />
                 <p className="text-sm flex-1">{error}</p>
-                <button onClick={reset} className="text-xs underline shrink-0">Try again</button>
+                <button onClick={reset} className="text-xs underline">Try again</button>
               </div>
             )}
 
-            {/* Result */}
             {product && !loading && (
               <ProductCard product={product} onScanAnother={reset} />
-            )}
-
-            {/* Info */}
-            {mode === "idle" && !loading && !product && (
-              <div className="bg-teal-light/40 border border-primary/20 rounded-2xl p-5 text-sm">
-                <p className="font-semibold text-primary mb-1">How it works</p>
-                <p className="text-muted-foreground text-xs leading-relaxed">
-                  Scan any food product barcode with your camera or enter it manually. We look it up in the <strong>Open Food Facts</strong> database and show you its <strong>Eco-Score (A–E)</strong> — based on lifecycle analysis, packaging, origin, and more.
-                </p>
-              </div>
             )}
           </>
         )}
