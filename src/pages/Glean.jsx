@@ -15,74 +15,110 @@ const ECO_GRADES = {
 };
 
 const ProductCard = ({ product, onScanAnother }) => {
-  const grade = product.ecoscore_grade?.toLowerCase() || 'c';
+  // Guard: Default to 'c' if grade is missing to prevent styling crashes
+  const grade = product?.ecoscore_grade?.toLowerCase() || 'c';
   const style = ECO_GRADES[grade] || ECO_GRADES.c;
 
   return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      {/* Main Product Info */}
+    <div className="space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      {/* Product Header Card */}
       <div className="bg-card rounded-3xl border border-border p-6 shadow-sm">
         <div className="flex items-center gap-4 mb-6">
-          {product.image_url ? (
-            <img src={product.image_url} alt={product.product_name} className="w-20 h-20 object-contain rounded-xl bg-white p-1 border" />
+          {product?.image_url ? (
+            <img 
+              src={product.image_url} 
+              alt="" 
+              className="w-20 h-20 object-contain rounded-xl bg-white p-1 border" 
+            />
           ) : (
-            <div className="w-20 h-20 bg-muted rounded-xl flex items-center justify-center text-muted-foreground"><Package size={32} /></div>
+            <div className="w-20 h-20 bg-muted rounded-xl flex items-center justify-center text-muted-foreground">
+              <Package size={32} />
+            </div>
           )}
-          <div>
-            <h2 className="text-xl font-bold leading-tight">{product.product_name || "Unknown Product"}</h2>
-            <p className="text-sm text-muted-foreground">{product.brands || "Brand unavailable"}</p>
+          <div className="flex-1 min-w-0">
+            <h2 className="text-xl font-bold leading-tight truncate">
+              {product?.product_name || "Unknown Product"}
+            </h2>
+            <p className="text-sm text-muted-foreground truncate">
+              {product?.brands || "Brand unavailable"}
+            </p>
           </div>
         </div>
 
-        {/* Eco-Score Primary Display */}
+        {/* Eco-Score Primary Badge */}
         <div className={cn("rounded-2xl p-5 border-2 flex items-center justify-between", style.bg, style.border)}>
           <div className="space-y-1">
-            <p className={cn("text-xs font-bold uppercase tracking-widest", style.text)}>Eco-Score</p>
+            <p className={cn("text-[10px] font-black uppercase tracking-widest opacity-70", style.text)}>
+              Eco-Score Impact
+            </p>
             <p className="text-2xl font-black">{style.label} {style.emoji}</p>
           </div>
-          <div className={cn("w-14 h-14 rounded-xl flex items-center justify-center text-3xl font-black text-white shadow-sm", style.color)}>
+          <div className={cn("w-14 h-14 rounded-xl flex items-center justify-center text-3xl font-black text-white shadow-md", style.color)}>
             {grade.toUpperCase()}
           </div>
         </div>
       </div>
 
-      {/* Environmental Details Section */}
-      <div className="grid gap-4">
-        <div className="bg-white rounded-2xl border border-border p-5 flex items-start gap-4">
-          <div className="p-2 bg-teal-50 rounded-lg text-teal-600"><Leaf size={20} /></div>
+      {/* Environmental Details - Clean & Structured */}
+      <div className="grid gap-3">
+        {/* Packaging Detail */}
+        <div className="bg-white/50 rounded-2xl border border-border p-4 flex items-start gap-4">
+          <div className="p-2 bg-blue-50 rounded-lg text-blue-600">
+            <Package size={18} />
+          </div>
           <div>
-            <p className="text-sm font-semibold">Ingredients Analysis</p>
-            <p className="text-xs text-muted-foreground mt-1">
-              {product.ingredients_analysis_tags?.includes('en:palm-oil-free') ? "✓ Palm oil free" : "⚠️ May contain palm oil"}
-            </p>
-            <p className="text-xs text-muted-foreground">
-              {product.ingredients_analysis_tags?.includes('en:vegan') ? "✓ Vegan friendly" : ""}
+            <p className="text-sm font-bold">Packaging</p>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              {product?.packaging_text || "No specific packaging data found."}
             </p>
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl border border-border p-5 flex items-start gap-4">
-          <div className="p-2 bg-blue-50 rounded-lg text-blue-600"><Package size={20} /></div>
+        {/* Origin Detail */}
+        <div className="bg-white/50 rounded-2xl border border-border p-4 flex items-start gap-4">
+          <div className="p-2 bg-orange-50 rounded-lg text-orange-600">
+            <Globe size={18} />
+          </div>
           <div>
-            <p className="text-sm font-semibold">Packaging Impact</p>
-            <p className="text-xs text-muted-foreground mt-1 lowercase">
-              {product.packaging_text || "Packaging details not fully specified by manufacturer."}
+            <p className="text-sm font-bold">Origin & Production</p>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              {product?.origins || "Production origin not specified."}
             </p>
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl border border-border p-5 flex items-start gap-4">
-          <div className="p-2 bg-orange-50 rounded-lg text-orange-600"><Globe size={20} /></div>
+        {/* Sustainability Tags */}
+        <div className="bg-white/50 rounded-2xl border border-border p-4 flex items-start gap-4">
+          <div className="p-2 bg-green-50 rounded-lg text-green-600">
+            <Leaf size={18} />
+          </div>
           <div>
-            <p className="text-sm font-semibold">Origin & Traceability</p>
-            <p className="text-xs text-muted-foreground mt-1">
-              {product.origins || "Origins not specified."}
-            </p>
+            <p className="text-sm font-bold">Sustainability Analysis</p>
+            <div className="flex flex-wrap gap-2 mt-2">
+              {product?.ingredients_analysis_tags && product.ingredients_analysis_tags.length > 0 ? (
+                product.ingredients_analysis_tags.map((tag) => (
+                  <span 
+                    key={tag} 
+                    className="text-[10px] bg-muted px-2 py-1 rounded-full font-medium capitalize"
+                  >
+                    {tag.replace("en:", "").replace(/-/g, " ")}
+                  </span>
+                ))
+              ) : (
+                <span className="text-xs text-muted-foreground italic">
+                  Not enough data for detailed analysis.
+                </span>
+              )}
+            </div>
           </div>
         </div>
       </div>
 
-      <Button onClick={onScanAnother} variant="outline" className="w-full rounded-2xl py-6 border-dashed border-2 hover:bg-muted/50">
+      <Button 
+        onClick={onScanAnother} 
+        variant="outline" 
+        className="w-full rounded-2xl py-6 border-dashed border-2 hover:bg-muted/50"
+      >
         Scan another product
       </Button>
     </div>
