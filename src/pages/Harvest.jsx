@@ -1,8 +1,11 @@
-const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null, updateMe: async()=>({}) }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, list:async()=>[], create:async()=>({}), update:async()=>({}), delete:async()=>({}), bulkCreate:async()=>[] }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
+const db = globalThis.__B44_DB__ || { 
+  auth: { isAuthenticated: async () => false, me: async () => null, updateMe: async () => ({}) }, 
+  entities: new Proxy({}, { get: () => ({ filter: async () => [], get: async () => null, list: async () => [], create: async () => ({}), update: async () => ({}), delete: async () => ({}), bulkCreate: async () => [] }) }), 
+  integrations: { Core: { UploadFile: async () => ({ file_url: '' }) } } 
+};
 
 import { useState, useEffect } from "react";
-
-import { Star, Gift, CheckCircle2, Loader2, Clock, Tag } from "lucide-react";
+import { Star, Gift, CheckCircle2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -27,6 +30,50 @@ const CATEGORY_COLORS = {
   discount: "bg-amber-50 text-amber-700 border-amber-200",
 };
 
+// Extracted RewardCard for better performance and readability
+function RewardCard({ reward, userPoints, onRedeem, redeeming }) {
+  const canAfford = userPoints >= reward.points_cost;
+  const isRedeeming = redeeming === reward.id;
+
+  return (
+    <div className={cn(
+      "bg-card border rounded-2xl p-5 shadow-sm transition-all",
+      reward.featured ? "border-amber-400/40 bg-gradient-to-br from-amber-50/50 to-card" : "border-border/60"
+    )}>
+      <div className="flex items-start gap-4">
+        <div className="text-3xl mt-0.5">{reward.emoji}</div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start justify-between gap-2">
+            <div>
+              <p className="font-semibold text-sm leading-tight">{reward.title}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{reward.partner}</p>
+            </div>
+            <span className={cn("text-[10px] px-2 py-1 rounded-lg border font-medium whitespace-nowrap", CATEGORY_COLORS[reward.category])}>
+              {CATEGORY_LABELS[reward.category]}
+            </span>
+          </div>
+          <p className="text-xs text-muted-foreground mt-2 line-clamp-2">{reward.description}</p>
+          <div className="flex items-center justify-between mt-3">
+            <div className="flex items-center gap-1">
+              <Star size={14} className="text-amber-500 fill-amber-500" />
+              <span className="font-bold text-sm">{reward.points_cost.toLocaleString()}</span>
+              <span className="text-xs text-muted-foreground">pts</span>
+            </div>
+            <Button
+              size="sm"
+              disabled={!canAfford || isRedeeming}
+              onClick={() => onRedeem(reward)}
+              className={cn("rounded-xl text-xs h-8", !canAfford && "opacity-50")}
+            >
+              {isRedeeming ? <Loader2 size={14} className="animate-spin" /> : canAfford ? "Redeem" : "Not enough pts"}
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function Rewards() {
   const [user, setUser] = useState(null);
   const [rewards, setRewards] = useState([]);
@@ -40,37 +87,49 @@ export default function Rewards() {
   useEffect(() => { loadData(); }, []);
 
   async function loadData() {
-    let [me, rws, reds] = await Promise.all([
-      db.auth.me(),
-      db.entities.Reward.list(),
-      db.entities.Redemption.list("-created_date", 50),
-    ]);
-    if (rws.length === 0) {
-      await db.entities.Reward.bulkCreate(DEFAULT_REWARDS);
-      rws = await db.entities.Reward.list();
+    try {
+      let [me, rws, reds] = await Promise.all([
+        db.auth.me(),
+        db.entities.Reward.list(),
+        db.entities.Redemption.list("-created_date", 50),
+      ]);
+      
+      if (rws.length === 0) {
+        await db.entities.Reward.bulkCreate(DEFAULT_REWARDS);
+        rws = await db.entities.Reward.list();
+      }
+      
+      setUser(me);
+      setRewards(rws);
+      setRedemptions(reds);
+    } catch (error) {
+      console.error("Failed to load data:", error);
+    } finally {
+      setLoading(false);
     }
-    setUser(me);
-    setRewards(rws);
-    setRedemptions(reds);
-    setLoading(false);
   }
 
   async function handleRedeem(reward) {
     if ((user?.points || 0) < reward.points_cost) return;
     setRedeeming(reward.id);
-    const code = `ECO-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
-    await db.entities.Redemption.create({
-      reward_id: reward.id,
-      reward_title: reward.title,
-      points_spent: reward.points_cost,
-      code,
-    });
-    const newPoints = (user?.points || 0) - reward.points_cost;
-    await db.auth.updateMe({ points: newPoints });
-    setUser(u => ({ ...u, points: newPoints }));
-    setRedeemed({ ...reward, code });
-    setRedeeming(null);
-    await loadData();
+    try {
+      const code = `ECO-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+      await db.entities.Redemption.create({
+        reward_id: reward.id,
+        reward_title: reward.title,
+        points_spent: reward.points_cost,
+        code,
+      });
+      const newPoints = (user?.points || 0) - reward.points_cost;
+      await db.auth.updateMe({ points: newPoints });
+      setUser(u => ({ ...u, points: newPoints }));
+      setRedeemed({ ...reward, code });
+      await loadData();
+    } catch (err) {
+      console.error("Redemption failed:", err);
+    } finally {
+      setRedeeming(null);
+    }
   }
 
   const featured = rewards.filter(r => r.featured);
@@ -90,7 +149,7 @@ export default function Rewards() {
           <h1 className="font-display text-3xl font-semibold">Harvest</h1>
           <p className="text-white/60 text-sm mt-1">Give your seeds and reap your rewards.</p>
           <div className="flex items-center gap-2 mt-4 bg-white/15 backdrop-blur rounded-2xl px-4 py-3 w-fit">
-            <Star size={18} className="text-gold fill-gold" />
+            <Star size={18} className="text-amber-400 fill-amber-400" />
             <span className="font-bold text-xl">{(user?.points || 0).toLocaleString()}</span>
             <span className="text-white/70 text-sm">seeds available</span>
           </div>
@@ -179,7 +238,7 @@ export default function Rewards() {
       {/* Redemption success modal */}
       {redeemed && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4" onClick={() => setRedeemed(null)}>
-          <div className="bg-card rounded-3xl p-8 max-w-sm w-full shadow-2xl animate-pop-in text-center" onClick={e => e.stopPropagation()}>
+          <div className="bg-card rounded-3xl p-8 max-w-sm w-full shadow-2xl text-center" onClick={e => e.stopPropagation()}>
             <div className="text-5xl mb-4">{redeemed.emoji}</div>
             <CheckCircle2 size={48} className="text-green-500 mx-auto mb-3" />
             <h3 className="font-display text-xl font-semibold mb-1">Redeemed!</h3>
@@ -193,49 +252,6 @@ export default function Rewards() {
           </div>
         </div>
       )}
-    </div>
-  );
-}
-
-function RewardCard({ reward, userPoints, onRedeem, redeeming }) {
-  const canAfford = userPoints >= reward.points_cost;
-  const isRedeeming = redeeming === reward.id;
-
-  return (
-    <div className={cn(
-      "bg-card border rounded-2xl p-5 shadow-sm transition-all",
-      reward.featured ? "border-gold/40 bg-gradient-to-br from-amber-50/50 to-card" : "border-border/60"
-    )}>
-      <div className="flex items-start gap-4">
-        <div className="text-3xl mt-0.5">{reward.emoji}</div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-start justify-between gap-2">
-            <div>
-              <p className="font-semibold text-sm leading-tight">{reward.title}</p>
-              <p className="text-xs text-muted-foreground mt-0.5">{reward.partner}</p>
-            </div>
-            <span className={cn("text-[10px] px-2 py-1 rounded-lg border font-medium whitespace-nowrap", CATEGORY_COLORS[reward.category])}>
-              {CATEGORY_LABELS[reward.category]}
-            </span>
-          </div>
-          <p className="text-xs text-muted-foreground mt-2 line-clamp-2">{reward.description}</p>
-          <div className="flex items-center justify-between mt-3">
-            <div className="flex items-center gap-1">
-              <Star size={14} className="text-gold fill-gold" />
-              <span className="font-bold text-sm">{reward.points_cost.toLocaleString()}</span>
-              <span className="text-xs text-muted-foreground">pts</span>
-            </div>
-            <Button
-              size="sm"
-              disabled={!canAfford || isRedeeming}
-              onClick={() => onRedeem(reward)}
-              className={cn("rounded-xl text-xs h-8", !canAfford && "opacity-50")}
-            >
-              {isRedeeming ? <Loader2 size={14} className="animate-spin" /> : canAfford ? "Redeem" : "Not enough pts"}
-            </Button>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }
