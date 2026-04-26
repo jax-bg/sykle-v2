@@ -218,7 +218,7 @@ export default function Rewards() {
                     <p className="font-semibold text-sm">{r.reward_title}</p>
                     <p className="text-xs text-muted-foreground">Code: <span className="font-mono font-bold text-primary">{r.code}</span></p>
                   </div>
-                  <p className="text-sm font-bold text-destructive">-{r.points_spent} pts</p>
+                  <p className="text-sm font-bold text-destructive">-{r.points_spent} seeds</p>
                 </div>
               </div>
             ))}
@@ -273,7 +273,7 @@ function RewardCard({ reward, userPoints, onRedeem, redeeming }) {
             <div className="flex items-center gap-1">
               <Star size={14} className="text-amber-500 fill-amber-500" />
               <span className="font-bold text-sm">{reward.points_cost.toLocaleString()}</span>
-              <span className="text-xs text-muted-foreground">pts</span>
+              <span className="text-xs text-muted-foreground">seeds</span>
             </div>
             <Button
               size="sm"
@@ -281,7 +281,7 @@ function RewardCard({ reward, userPoints, onRedeem, redeeming }) {
               onClick={() => onRedeem(reward)}
               className={cn("rounded-xl text-xs h-8", !canAfford && "opacity-50")}
             >
-              {isRedeeming ? <Loader2 size={14} className="animate-spin" /> : canAfford ? "Redeem" : "Not enough pts"}
+              {isRedeeming ? <Loader2 size={14} className="animate-spin" /> : canAfford ? "Redeem" : "Not enough seeds"}
             </Button>
           </div>
         </div>
