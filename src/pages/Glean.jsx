@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { supabase } from "@/lib/supabase";
+import { supabase, selectHistoryRows, insertHistoryRow, fetchProduct } from "@/lib/supabase";
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Camera, Search, X, Loader2, AlertCircle, Leaf, Package, Globe, History, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
