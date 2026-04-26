@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { supabase } from "@/lib/supabase";
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Camera, Search, X, Loader2, AlertCircle, Leaf, Package, Globe } from "lucide-react";
+import { Camera, Search, X, Loader2, AlertCircle, Leaf, Package, Globe, History, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/lib/AuthContext";
