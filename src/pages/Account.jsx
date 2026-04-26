@@ -122,13 +122,31 @@ export default function Account() {
           </div>
         </div>
 
-        {/* User Stats Card */}
         <div className="bg-card rounded-3xl border border-border p-8 shadow-sm">
           <div className="space-y-4">
             <div className="flex items-center gap-4">
-              <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center text-2xl text-primary">
-                {formValues.full_name?.charAt(0) || 'A'}
-              </div>
+<div className="bg-card rounded-3xl border border-border p-8 shadow-sm">
+  <div className="space-y-4">
+    <div className="flex items-center gap-4">
+      <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center overflow-hidden border">
+        {formValues.avatar_url ? (
+          <img 
+            src={formValues.avatar_url} 
+            alt={formValues.full_name} 
+            className="h-full w-full object-cover"
+            referrerPolicy="no-referrer"
+          />
+        ) : (
+          <span className="text-2xl font-bold text-primary">
+            {formValues.full_name?.charAt(0) || 'A'}
+          </span>
+        )}
+      </div>
+      <div>
+        <p className="text-sm text-muted-foreground">Logged in as</p>
+        <p className="text-lg font-semibold">{formValues.email}</p>
+      </div>
+    </div>
               <div>
                 <p className="text-sm text-muted-foreground">Logged in as</p>
                 <p className="text-lg font-semibold">{formValues.email}</p>
