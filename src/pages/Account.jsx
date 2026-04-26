@@ -77,7 +77,6 @@ export default function Account() {
             <div>
               <p className="text-sm text-muted-foreground uppercase tracking-wide mb-2">Account</p>
               <h1 className="text-3xl font-semibold">My Profile</h1>
-              <p className="text-sm text-muted-foreground mt-1">Your personal data is saved to your Supabase account.</p>
             </div>
             <Button variant="outline" onClick={() => logout()} className="gap-2">
               <LogOut size={16} /> Sign out
