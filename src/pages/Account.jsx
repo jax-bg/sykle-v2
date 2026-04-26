@@ -118,9 +118,14 @@ export default function Account() {
             </div>
             <Button variant="outline" onClick={() => logout()} className="gap-2">
               <LogOut size={16} /> Sign out
-            </Button>
-          </div>
+           </Button>
+            </div>
+          </form>
         </div>
+      </div>
+    </div>
+  );
+}
 
         <div className="bg-card rounded-3xl border border-border p-8 shadow-sm">
           <div className="space-y-4">
