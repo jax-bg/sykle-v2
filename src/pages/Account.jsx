@@ -4,7 +4,7 @@ import { useAuth } from '@/lib/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Loader2, LogOut, UserCircle2, ShieldCheck, Users, Search } from 'lucide-react';
-import { supabase } from '@/lib/supabase'; // Ensure this path is correct for Sykle
+import { supabase } from '@/lib/supabase';
 
 export default function Account() {
   const {
@@ -38,7 +38,6 @@ export default function Account() {
         email: profile?.email || user?.email || '',
       });
       
-      // Fetch users if the current user is an admin
       if (profile?.is_admin) {
         fetchUsers();
       }
@@ -52,7 +51,7 @@ export default function Account() {
       .select('*')
       .order('full_name', { ascending: true });
     
-    if (!error) setAllUsers(data);
+    if (!error) setAllUsers(data || []);
     setLoadingUsers(false);
   };
 
@@ -70,11 +69,8 @@ export default function Account() {
     }
   };
 
-  const canEdit = isAuthenticated && !isLoadingAuth;
-
   const handleSave = async (event) => {
     event.preventDefault();
-    if (!canEdit) return;
     setSaving(true);
     setMessage('');
     try {
@@ -89,6 +85,14 @@ export default function Account() {
       setSaving(false);
     }
   };
+
+  if (isLoadingAuth) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="animate-spin text-primary" size={32} />
+      </div>
+    );
+  }
 
   if (!isAuthenticated) {
     return (
@@ -106,6 +110,7 @@ export default function Account() {
   return (
     <div className="min-h-screen bg-background px-6 py-10">
       <div className="max-w-3xl mx-auto space-y-6">
+        
         {/* Profile Header */}
         <div className="bg-card rounded-3xl border border-border p-8 shadow-sm">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -118,45 +123,34 @@ export default function Account() {
             </div>
             <Button variant="outline" onClick={() => logout()} className="gap-2">
               <LogOut size={16} /> Sign out
-           </Button>
-            </div>
-          </form>
+            </Button>
+          </div>
         </div>
-      </div>
-    </div>
-  );
-}
 
+        {/* User Stats Card */}
         <div className="bg-card rounded-3xl border border-border p-8 shadow-sm">
           <div className="space-y-4">
             <div className="flex items-center gap-4">
-<div className="bg-card rounded-3xl border border-border p-8 shadow-sm">
-  <div className="space-y-4">
-    <div className="flex items-center gap-4">
-      <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center overflow-hidden border">
-        {formValues.avatar_url ? (
-          <img 
-            src={formValues.avatar_url} 
-            alt={formValues.full_name} 
-            className="h-full w-full object-cover"
-            referrerPolicy="no-referrer"
-          />
-        ) : (
-          <span className="text-2xl font-bold text-primary">
-            {formValues.full_name?.charAt(0) || 'A'}
-          </span>
-        )}
-      </div>
-      <div>
-        <p className="text-sm text-muted-foreground">Logged in as</p>
-        <p className="text-lg font-semibold">{formValues.email}</p>
-      </div>
-    </div>
+              <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center overflow-hidden border">
+                {formValues.avatar_url ? (
+                  <img 
+                    src={formValues.avatar_url} 
+                    alt={formValues.full_name} 
+                    className="h-full w-full object-cover"
+                    referrerPolicy="no-referrer"
+                  />
+                ) : (
+                  <span className="text-2xl font-bold text-primary">
+                    {formValues.full_name?.charAt(0) || 'A'}
+                  </span>
+                )}
+              </div>
               <div>
                 <p className="text-sm text-muted-foreground">Logged in as</p>
                 <p className="text-lg font-semibold">{formValues.email}</p>
               </div>
             </div>
+            
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               <div className="rounded-2xl bg-muted p-4">
                 <p className="text-xs uppercase tracking-wide text-muted-foreground">Lifetime points</p>
@@ -174,24 +168,22 @@ export default function Account() {
           </div>
         </div>
 
-        {/* Admin Management Section - Only visible to Admins */}
+        {/* Admin Management Section */}
         {profile?.is_admin && (
           <div className="bg-card rounded-3xl border-2 border-primary/20 p-8 shadow-sm">
             <div className="flex items-center gap-3 mb-6">
               <Users className="text-primary" />
               <h2 className="text-2xl font-semibold">Admin: User Management</h2>
             </div>
-            
             <div className="relative mb-6">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
               <Input 
                 className="pl-10" 
-                placeholder="Search users by name or email..." 
+                placeholder="Search users..." 
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-
             <div className="space-y-4 max-h-96 overflow-y-auto pr-2">
               {loadingUsers ? (
                 <div className="flex justify-center p-4"><Loader2 className="animate-spin text-primary" /></div>
@@ -205,16 +197,13 @@ export default function Account() {
                         <p className="text-xs text-muted-foreground">{userItem.email}</p>
                       </div>
                       <div className="flex items-center gap-2">
-                        <div className="flex flex-col">
-                          <span className="text-[10px] uppercase text-muted-foreground font-bold ml-1">Seeds</span>
-                          <Input 
-                            type="number" 
-                            className="w-24 h-9" 
-                            defaultValue={userItem.points} 
-                            onBlur={(e) => handleUpdateUserPoints(userItem.id, parseInt(e.target.value))}
-                          />
-                        </div>
-                        <Button size="sm" variant="ghost" className="mt-4">Edit Profile</Button>
+                        <Input 
+                          type="number" 
+                          className="w-24 h-9" 
+                          defaultValue={userItem.points} 
+                          onBlur={(e) => handleUpdateUserPoints(userItem.id, parseInt(e.target.value))}
+                        />
+                        <Button size="sm" variant="ghost">Edit</Button>
                       </div>
                     </div>
                   ))
@@ -228,33 +217,32 @@ export default function Account() {
           <h2 className="text-xl font-semibold mb-6">Profile Settings</h2>
           <form onSubmit={handleSave} className="space-y-5">
             <div className="grid gap-4 md:grid-cols-2">
-              <label className="space-y-2 text-sm font-medium">
-                <span>Full name</span>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Full name</label>
                 <Input
                   value={formValues.full_name}
-                  onChange={(event) => setFormValues({ ...formValues, full_name: event.target.value })}
+                  onChange={(e) => setFormValues({ ...formValues, full_name: e.target.value })}
                   placeholder="Your name"
                   required
                 />
-              </label>
-              <label className="space-y-2 text-sm font-medium">
-                <span>Avatar URL</span>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Avatar URL</label>
                 <Input
                   value={formValues.avatar_url}
-                  onChange={(event) => setFormValues({ ...formValues, avatar_url: event.target.value })}
+                  onChange={(e) => setFormValues({ ...formValues, avatar_url: e.target.value })}
                   placeholder="https://..."
                 />
-              </label>
+              </div>
             </div>
-            <label className="space-y-2 text-sm font-medium">
-              <span>Email</span>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Email</label>
               <Input value={formValues.email} readOnly />
-            </label>
-
+            </div>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between pt-2">
               <div>
                 {message && <p className="text-sm font-medium text-primary">{message}</p>}
-                {isLoadingProfile && <p className="text-sm text-muted-foreground">Loading account details...</p>}
+                {isLoadingProfile && <p className="text-sm text-muted-foreground">Loading...</p>}
               </div>
               <Button type="submit" disabled={saving || isLoadingProfile} className="gap-2 px-8">
                 {saving ? <Loader2 size={16} className="animate-spin" /> : 'Save changes'}
@@ -262,6 +250,7 @@ export default function Account() {
             </div>
           </form>
         </div>
+
       </div>
     </div>
   );
