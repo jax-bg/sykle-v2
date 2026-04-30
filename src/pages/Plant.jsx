@@ -156,7 +156,7 @@ export default function Goals() {
       <div className="max-w-2xl mx-auto px-6 py-6">
         {/* Level Card */}
         <div className="bg-card rounded-2xl border border-border/60 shadow-sm p-6 mb-6">
-          <h2 className="font-display text-xl font-semibold mb-5">Your Level</h2>
+          <h2 className="font-display text-xl font-semibold mb-5">Your Plant</h2>
           <div className="flex gap-6 items-center">
             <LevelRing lifetimePoints={profile?.lifetime_points || 0} size={110} />
             <div className="flex-1">

@@ -121,7 +121,7 @@ export default function Home() {
         <div className="bg-card rounded-2xl shadow-lg border border-border/60 p-6 mb-6 flex items-center gap-6">
           <LevelRing lifetimePoints={profile?.lifetime_points || 0} size={100} />
           <div className="flex-1">
-            <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium mb-1">Your Level</p>
+            <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium mb-1">Your Plant</p>
             <p className="font-display text-2xl font-semibold text-primary">{levelInfo.title}</p>
             <div className="mt-3 bg-muted rounded-full h-2">
               <div
