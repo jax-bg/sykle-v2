@@ -5,7 +5,7 @@ import { useAuth } from "@/lib/AuthContext";
 
 import { getLevelInfo, LOG_CATEGORIES, WASTE_TYPES, WATER_TYPES } from "@/lib/utils";
 import LevelRing from "@/components/LevelRing";
-import { Plus, Loader2, Trash2, CheckCircle2, AlertTriangle } from "lucide-react";
+import { Plus, Loader2, Trash2, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -22,9 +22,6 @@ const LEVEL_MILESTONES = [
   { level: 9, title: "Ecosystem", emoji: "🌎", points: 12000 },
   { level: 10, title: "Earth Guardian", emoji: "🌟", points: 18000 },
 ];
-
-// Anti-Abuse: Prevent tiny goals to discourage farming
-const MIN_GOAL_VALUE = 5; 
 
 export default function Goals() {
   const { profile, isLoadingAuth, authChecked } = useAuth();
@@ -75,23 +72,16 @@ export default function Goals() {
 
     const userId = profile?.id;
     if (!userId) {
-      setFormError('You must be signed in to create a goal.');
+      const errorMessage = 'You must be signed in to create a goal.';
+      console.error(errorMessage);
+      setFormError(errorMessage);
       setSubmitting(false);
       return;
     }
 
     const targetAmount = parseFloat(form.target_value);
-    
-    // Validation Logic[cite: 5]
     if (isNaN(targetAmount) || targetAmount <= 0) {
       setFormError('Please enter a valid target value.');
-      setSubmitting(false);
-      return;
-    }
-
-    // Anti-Abuse: Prevent tiny goals[cite: 5]
-    if (targetAmount < MIN_GOAL_VALUE) {
-      setFormError(`Target must be at least ${MIN_GOAL_VALUE} to discourage point farming.`);
       setSubmitting(false);
       return;
     }
@@ -113,7 +103,17 @@ export default function Goals() {
     ]).select();
 
     if (error) {
-      setFormError(error.message || 'Failed to create goal.');
+      const errorMessage = error.message || 'Failed to create goal.';
+      console.error('Failed to create goal:', error);
+      setFormError(errorMessage);
+      setSubmitting(false);
+      return;
+    }
+
+    if (!data || data.length === 0) {
+      const errorMessage = 'Goal creation failed. Please check your table schema or permissions.';
+      console.error(errorMessage, { data });
+      setFormError(errorMessage);
       setSubmitting(false);
       return;
     }
@@ -146,7 +146,6 @@ export default function Goals() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
       <div className="bg-gradient-to-br from-primary to-[hsl(178,60%,20%)] text-primary-foreground px-6 pt-10 pb-8">
         <div className="max-w-2xl mx-auto">
           <h1 className="font-display text-3xl font-semibold">Plant</h1>
@@ -155,7 +154,7 @@ export default function Goals() {
       </div>
 
       <div className="max-w-2xl mx-auto px-6 py-6">
-        {/* Level Card[cite: 5] */}
+        {/* Level Card */}
         <div className="bg-card rounded-2xl border border-border/60 shadow-sm p-6 mb-6">
           <h2 className="font-display text-xl font-semibold mb-5">Your Level</h2>
           <div className="flex gap-6 items-center">
@@ -167,6 +166,7 @@ export default function Goals() {
             </div>
           </div>
 
+          {/* Level milestones */}
           <div className="mt-6 space-y-2">
             <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">Level Milestones</p>
             {LEVEL_MILESTONES.map(m => {
@@ -190,7 +190,7 @@ export default function Goals() {
           </div>
         </div>
 
-        {/* Goals Management[cite: 5] */}
+        {/* Goals */}
         <div className="flex items-center justify-between mb-4">
           <div>
             <h2 className="font-display text-xl font-semibold">My Plants</h2>
@@ -209,7 +209,7 @@ export default function Goals() {
           </Button>
         </div>
 
-        {/* Goal creation form[cite: 5] */}
+        {/* Goal form */}
         {showForm && (
           <div className="bg-card border border-border/60 rounded-2xl p-5 mb-5 shadow-sm">
             <form onSubmit={handleCreate} className="space-y-4">
@@ -224,7 +224,9 @@ export default function Goals() {
                         onClick={() => setForm(f => ({ ...f, category: cat.value, subtype: cat.value === 'water' ? 'shower' : 'recyclable' }))}
                         className={cn(
                           "flex items-center justify-center gap-2 py-3 rounded-xl font-medium text-sm border transition-all",
-                          form.category === cat.value ? "bg-primary text-primary-foreground border-primary" : "bg-muted border-transparent text-muted-foreground hover:bg-secondary"
+                          form.category === cat.value
+                            ? "bg-primary text-primary-foreground border-primary"
+                            : "bg-muted border-transparent text-muted-foreground hover:bg-secondary"
                         )}
                       >
                         <span>{cat.emoji}</span> {cat.label}
@@ -232,9 +234,10 @@ export default function Goals() {
                     ))}
                   </div>
                 </div>
+
                 <div>
                   <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1.5 block">Type</label>
-                  <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto pr-1">
+                  <div className="grid grid-cols-2 gap-2">
                     {(form.category === 'water' ? WATER_TYPES : WASTE_TYPES).map(typeOption => (
                       <button
                         key={typeOption.value}
@@ -242,7 +245,9 @@ export default function Goals() {
                         onClick={() => setForm(f => ({ ...f, subtype: typeOption.value }))}
                         className={cn(
                           "flex items-center gap-2 px-4 py-3 rounded-xl text-sm border transition-all",
-                          form.subtype === typeOption.value ? "bg-teal-light border-primary text-primary font-medium" : "border-border bg-background text-foreground hover:bg-muted"
+                          form.subtype === typeOption.value
+                            ? "bg-teal-light border-primary text-primary font-medium"
+                            : "border-border bg-background text-foreground hover:bg-muted"
                         )}
                       >
                         <span>{typeOption.emoji}</span> {typeOption.label}
@@ -264,26 +269,19 @@ export default function Goals() {
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1.5 block">Target value ({form.category === 'water' ? 'L' : 'kg'})</label>
+                  <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1.5 block">Target value</label>
                   <Input
                     type="number"
                     min="0"
                     step="0.1"
                     value={form.target_value}
                     onChange={e => setForm(f => ({ ...f, target_value: e.target.value }))}
-                    placeholder={`Min. ${MIN_GOAL_VALUE}`}
+                    placeholder="e.g. 200"
                     required
                     className="rounded-xl h-11"
                   />
                 </div>
               </div>
-
-              {formError && (
-                <div className="flex items-center gap-2 p-3 rounded-xl bg-red-50 border border-red-100 text-red-700 text-sm">
-                  <AlertTriangle size={16} />
-                  {formError}
-                </div>
-              )}
 
               <div className="flex gap-3">
                 <Button type="button" variant="outline" onClick={() => setShowForm(false)} className="flex-1 rounded-xl">Cancel</Button>
@@ -292,6 +290,7 @@ export default function Goals() {
                   Create Goal
                 </Button>
               </div>
+              {formError && <p className="text-sm text-red-600">{formError}</p>}
             </form>
           </div>
         )}
