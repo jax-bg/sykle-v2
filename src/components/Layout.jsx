@@ -20,9 +20,6 @@ export default function Layout() {
       <aside className="hidden md:flex flex-col w-64 bg-sidebar min-h-screen fixed left-0 top-0 z-30">
         <div className="p-6 border-b border-sidebar-border">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-sidebar-primary flex items-center justify-center">
-            <Logo className="w-6 h-6 text-white" />
-            </div>
             <div>
               <p className="font-display font-semibold text-sidebar-foreground text-lg leading-tight">sykle</p>
               <p className="text-xs text-sidebar-foreground/50">UAE</p>
