@@ -16,7 +16,6 @@ const navItems = [
 export default function Layout() {
   return (
     <div className="flex min-h-screen bg-background">
-      {/* Desktop Sidebar */}
       <aside className="hidden md:flex flex-col w-64 bg-sidebar min-h-screen fixed left-0 top-0 z-30">
         <div className="p-6 border-b border-sidebar-border">
           <div className="flex items-center gap-3">
