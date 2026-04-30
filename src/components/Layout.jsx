@@ -1,6 +1,7 @@
 import { Outlet, NavLink, useLocation } from "react-router-dom";
 import { Home, ClipboardList, Target, MapPin, Gift, ScanLine, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
+import Logo from './Logo';
 
 const navItems = [
   { path: "/", label: "Garden", icon: Home },
@@ -20,7 +21,7 @@ export default function Layout() {
         <div className="p-6 border-b border-sidebar-border">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-sidebar-primary flex items-center justify-center">
-              <span className="text-lg">🌿</span>
+            <Logo className="w-6 h-6 text-white" />
             </div>
             <div>
               <p className="font-display font-semibold text-sidebar-foreground text-lg leading-tight">sykle</p>
