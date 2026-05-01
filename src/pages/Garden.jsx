@@ -117,12 +117,12 @@ export default function Home() {
 
       <div className="max-w-2xl mx-auto px-6 -mt-8">
       {/* Level card */}
-<div className="bg-card rounded-2xl shadow-sm border border-border/60 p-8 mb-6 flex items-center justify-between">
-  <div className="flex items-center gap-10">
-    {/* Left: Progress Ring */}
+<div className="bg-card rounded-2xl shadow-sm border border-border/60 p-5 sm:p-8 mb-6 flex flex-col sm:flex-row items-center justify-between gap-6 sm:gap-10">
+  <div className="flex flex-col sm:flex-row items-center gap-6 sm:gap-10 text-center sm:text-left">
+    {/* Responsive Progress Ring */}
     <LevelRing 
       lifetimePoints={profile?.lifetime_points || 0} 
-      size={160} 
+      size={window.innerWidth < 640 ? 120 : 160} 
     />
 
     {/* Middle: Status Info */}
@@ -130,21 +130,21 @@ export default function Home() {
       <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-[0.2em]">
         Level {levelInfo.level}
       </span>
-      <h2 className="font-display text-5xl font-bold text-primary leading-tight">
+      <h2 className="font-display text-3xl sm:text-5xl font-bold text-primary leading-tight">
         {levelInfo.title}
       </h2>
-      <div className="flex items-center gap-2 mt-1">
-        <span className="text-lg font-black text-foreground">
+      <div className="flex items-center justify-center sm:justify-start gap-2 mt-1">
+        <span className="text-base sm:text-lg font-black text-foreground">
           {levelInfo.progress}%
         </span>
-        <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
+        <span className="text-[10px] sm:text-xs text-muted-foreground font-medium uppercase tracking-wider">
           Complete
         </span>
       </div>
     </div>
   </div>
 
-  {/* Right: Milestone Info */}
+  {/* Milestone Info - Hidden on mobile to save space, or use smaller text */}
   <div className="hidden sm:flex flex-col items-end text-right border-l border-border/40 pl-10">
     <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider mb-2">
       Next Milestone
@@ -153,6 +153,9 @@ export default function Home() {
       <div className="flex flex-col">
         <p className="text-sm font-bold text-foreground leading-none">
           {levelInfo.nextTitle || "Grove"}
+        </p>
+        <p className="text-[10px] text-muted-foreground font-medium">
+          {levelInfo.pointsToNext?.toLocaleString() || "0"} seeds away
         </p>
       </div>
       <div className="w-10 h-10 rounded-xl bg-primary/5 flex items-center justify-center text-xl">
