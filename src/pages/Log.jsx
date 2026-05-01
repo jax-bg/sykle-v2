@@ -36,7 +36,7 @@ export default function Log() {
     if (!isLoadingAuth && authChecked) {
       loadData();
     }
-  }, [isLoadingAuth, authChecked, profile]);
+  }, [isLoadingAuth, authChecked]);
 
   async function loadData() {
     setLoading(true);
