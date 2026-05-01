@@ -152,11 +152,11 @@ export default function Home() {
     <div className="flex items-center gap-3 mb-1">
       <div className="flex flex-col">
         <p className="text-sm font-bold text-foreground leading-none">
-          {levelInfo.nextTitle}
+          {levelInfo.nextTitle || "Grove"}
         </p>
       </div>
       <div className="w-10 h-10 rounded-xl bg-primary/5 flex items-center justify-center text-xl">
-        {levelInfo.nextEmoji}
+        {levelInfo.nextEmoji || "🌳"}
       </div>
     </div>
   </div>
