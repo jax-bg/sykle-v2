@@ -3,8 +3,68 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@/lib/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Loader2, LogOut, UserCircle2, ShieldCheck, Users, Search } from 'lucide-react';
+import { Loader2, LogOut, UserCircle2, ShieldCheck, Users, Search, Save } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+
+/**
+ * Sub-component for individual admin user rows
+ * Manages its own local state for seeds, lifetime points, and streaks[cite: 1]
+ */
+function AdminUserRow({ userItem, onUpdate }) {
+  const [stats, setStats] = useState({
+    points: userItem.points || 0,
+    lifetime_points: userItem.lifetime_points || 0,
+    current_streak: userItem.current_streak || 0
+  });
+
+  return (
+    <div className="flex flex-col p-5 rounded-2xl bg-muted/50 border border-border gap-4">
+      <div className="flex justify-between items-start">
+        <div>
+          <p className="font-semibold text-lg">{userItem.full_name || 'Unnamed User'}</p>
+          <p className="text-xs text-muted-foreground">{userItem.email}</p>
+        </div>
+        <Button 
+          size="sm" 
+          onClick={() => onUpdate(userItem.id, stats)}
+          className="gap-2"
+        >
+          <Save size={14} /> Save Changes
+        </Button>
+      </div>
+
+      <div className="grid grid-cols-3 gap-3">
+        <div className="space-y-1">
+          <label className="text-[10px] uppercase font-bold text-muted-foreground">Seeds</label>
+          <Input 
+            type="number" 
+            value={stats.points}
+            onChange={(e) => setStats({...stats, points: parseInt(e.target.value) || 0})}
+            className="h-8"
+          />
+        </div>
+        <div className="space-y-1">
+          <label className="text-[10px] uppercase font-bold text-muted-foreground">Lifetime</label>
+          <Input 
+            type="number" 
+            value={stats.lifetime_points}
+            onChange={(e) => setStats({...stats, lifetime_points: parseInt(e.target.value) || 0})}
+            className="h-8"
+          />
+        </div>
+        <div className="space-y-1">
+          <label className="text-[10px] uppercase font-bold text-muted-foreground">Streak</label>
+          <Input 
+            type="number" 
+            value={stats.current_streak}
+            onChange={(e) => setStats({...stats, current_streak: parseInt(e.target.value) || 0})}
+            className="h-8"
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function Account() {
   const {
@@ -25,7 +85,7 @@ export default function Account() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
 
-  // Admin States
+  // Admin States[cite: 1]
   const [allUsers, setAllUsers] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [loadingUsers, setLoadingUsers] = useState(false);
@@ -55,10 +115,10 @@ export default function Account() {
     setLoadingUsers(false);
   };
 
-  const handleUpdateUserPoints = async (userId, newPoints) => {
+  const handleUpdateUserStats = async (userId, updates) => {
     const { error } = await supabase
       .from('profiles')
-      .update({ points: newPoints })
+      .update(updates)
       .eq('id', userId);
 
     if (!error) {
@@ -168,7 +228,7 @@ export default function Account() {
           </div>
         </div>
 
-        {/* Admin Management Section */}
+        {/* Admin Management Section[cite: 1] */}
         {profile?.is_admin && (
           <div className="bg-card rounded-3xl border-2 border-primary/20 p-8 shadow-sm">
             <div className="flex items-center gap-3 mb-6">
@@ -184,28 +244,18 @@ export default function Account() {
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-            <div className="space-y-4 max-h-96 overflow-y-auto pr-2">
+            <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2">
               {loadingUsers ? (
                 <div className="flex justify-center p-4"><Loader2 className="animate-spin text-primary" /></div>
               ) : (
                 allUsers
                   .filter(u => u.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) || u.email?.toLowerCase().includes(searchQuery.toLowerCase()))
                   .map((userItem) => (
-                    <div key={userItem.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-2xl bg-muted/50 border border-border gap-4">
-                      <div>
-                        <p className="font-medium">{userItem.full_name || 'Unnamed User'}</p>
-                        <p className="text-xs text-muted-foreground">{userItem.email}</p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Input 
-                          type="number" 
-                          className="w-24 h-9" 
-                          defaultValue={userItem.points} 
-                          onBlur={(e) => handleUpdateUserPoints(userItem.id, parseInt(e.target.value))}
-                        />
-                        <Button size="sm" variant="ghost">Edit</Button>
-                      </div>
-                    </div>
+                    <AdminUserRow 
+                      key={userItem.id} 
+                      userItem={userItem} 
+                      onUpdate={handleUpdateUserStats} 
+                    />
                   ))
               )}
             </div>
@@ -245,7 +295,7 @@ export default function Account() {
                 {isLoadingProfile && <p className="text-sm text-muted-foreground">Loading...</p>}
               </div>
               <Button type="submit" disabled={saving || isLoadingProfile} className="gap-2 px-8">
-                {saving ? <Loader2 size={16} className="animate-spin" /> : 'Save changes'}
+                {saving ? <Loader2 size={16} className="animate-spin" /> : 'Save my settings'}
               </Button>
             </div>
           </form>
