@@ -4,7 +4,7 @@ import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/AuthContext";
 
 import { calcPointsForEntry, formatDate, today, LOG_CATEGORIES, WASTE_TYPES, WATER_TYPES } from "@/lib/utils";
-import { Plus, Loader2, CheckCircle2 } from "lucide-react";
+import { Plus, Loader2, CheckCircle2, Calendar } from "lucide-react"; // Added Calendar icon
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -25,14 +25,13 @@ export default function Log() {
   const [useTime, setUseTime] = useState(false);
   const [timeValue, setTimeValue] = useState("");
   const [timeUnit, setTimeUnit] = useState("minutes");
-  const [entryDate, setEntryDate] = useState(today());
+  const [entryDate, setEntryDate] = useState(today()); // Controls the date input[cite: 1]
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [formError, setFormError] = useState(null);
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // MEMOIZED LOAD DATA: Pass userId as an argument[cite: 1]
   const loadData = useCallback(async (userId) => {
     if (!userId) return;
     setLoading(true);
@@ -52,7 +51,6 @@ export default function Log() {
     setLoading(false);
   }, []);
 
-  // TRIGGER ONLY ON AUTH: Profile is removed from deps to prevent re-fetching on point updates[cite: 1]
   useEffect(() => {
     if (!isLoadingAuth && authChecked && profile?.id) {
       loadData(profile.id);
@@ -82,25 +80,23 @@ export default function Log() {
     }
 
     try {
-      // 1. Insert Entry[cite: 1]
       const { data, error: insertError } = await supabase.from('LogEntry').insert([
         {
           user_id: userId,
           category,
           subtype,
           amount: computedAmount,
-          entry_date: entryDate,
+          entry_date: entryDate, // Uses the selected date[cite: 1]
         }
       ]).select();
 
       if (insertError) throw insertError;
 
-      // 2. OPTIMISTIC UPDATE: Update local state immediately[cite: 1]
       if (data && data[0]) {
         setEntries(prev => [data[0], ...prev].slice(0, 30));
       }
 
-      // 3. Goal Progress[cite: 1]
+      // Goal update logic[cite: 1]
       const { data: matchingGoals } = await supabase
         .from('Goals')
         .select('id,current_value,target_value')
@@ -122,7 +118,6 @@ export default function Log() {
         }));
       }
 
-      // 4. Update Profile (Points/Streak)[cite: 1]
       const pts = calcPointsForEntry(category, subtype, computedAmount);
       const lastDate = profile?.last_log_date;
       const yesterday = new Date();
@@ -140,7 +135,6 @@ export default function Log() {
         last_log_date: today(),
       });
 
-      // Reset UI[cite: 1]
       setAmount("");
       setTimeValue("");
       setSuccess(true);
@@ -218,7 +212,7 @@ export default function Log() {
                     onClick={() => { setUseTime(!useTime); setAmount(""); setTimeValue(""); }}
                     className="text-[10px] text-primary font-bold uppercase tracking-tighter hover:underline"
                   >
-                    {useTime ? "Enter Litres" : "Use Time"}
+                    {useTime ? "Enter Litres" : "⏱ Use Time"}
                   </button>
                 )}
               </div>
@@ -269,6 +263,20 @@ export default function Log() {
                   </span>
                 </div>
               )}
+            </div>
+
+            {/* Date Input[cite: 1] */}
+            <div>
+              <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2 block">Date</label>
+              <div className="relative">
+                <Input
+                  type="date"
+                  value={entryDate}
+                  onChange={(e) => setEntryDate(e.target.value)}
+                  className="h-12 rounded-xl pl-10"
+                />
+                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
+              </div>
             </div>
 
             <Button
