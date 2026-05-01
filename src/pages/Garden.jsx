@@ -116,7 +116,7 @@ export default function Home() {
       </div>
 
       <div className="max-w-2xl mx-auto px-6 -mt-8">
-        {/* Level card */}
+      {/* Level card */}
 <div className="bg-card rounded-2xl shadow-sm border border-border/60 p-8 mb-6 flex items-center justify-between">
   <div className="flex items-center gap-10">
     {/* Left: Progress Ring */}
@@ -135,7 +135,7 @@ export default function Home() {
       </h2>
       <div className="flex items-center gap-2 mt-1">
         <span className="text-lg font-black text-foreground">
-          {levelInfo.progress}%[cite: 4]
+          {levelInfo.progress}%
         </span>
         <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
           Complete
@@ -144,7 +144,7 @@ export default function Home() {
     </div>
   </div>
 
-  {/* Right: Milestone Info (Fills the empty space) */}
+  {/* Right: Milestone Info */}
   <div className="hidden sm:flex flex-col items-end text-right border-l border-border/40 pl-10">
     <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider mb-2">
       Next Milestone
@@ -152,10 +152,10 @@ export default function Home() {
     <div className="flex items-center gap-3 mb-1">
       <div className="flex flex-col">
         <p className="text-sm font-bold text-foreground leading-none">
-          {levelInfo.nextTitle || "Grove"}[cite: 4]
+          {levelInfo.nextTitle || "Grove"}
         </p>
         <p className="text-[10px] text-muted-foreground font-medium">
-          {levelInfo.pointsToNext?.toLocaleString() || "0"} seeds away[cite: 4]
+          {levelInfo.pointsToNext?.toLocaleString() || "0"} seeds away
         </p>
       </div>
       <div className="w-10 h-10 rounded-xl bg-primary/5 flex items-center justify-center text-xl">
