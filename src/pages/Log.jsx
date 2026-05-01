@@ -41,7 +41,7 @@ export default function Log() {
     if (!isLoadingAuth && authChecked && (profile?.id || user?.id)) {
       loadData();
     }
-  }, [isLoadingAuth, authChecked]);
+  }, [isLoadingAuth, authChecked, profile?.id, user?.id]);
 
   async function loadData() {
     setLoading(true);
@@ -104,10 +104,7 @@ export default function Log() {
     const newPoints = (profile?.points || 0) + pts;
     const newLifetime = (profile?.lifetime_points || 0) + pts;
     const lastDate = profile?.last_log_date;
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-    const yStr = yesterday.toISOString().split("T")[0];
-    const streak = lastDate === yStr || lastDate === today()
+    const streak = lastDate === today() || lastDate === new Date(Date.now() - 864e5).toISOString().split('T')[0]
       ? (profile?.current_streak || 0) + (lastDate !== today() ? 1 : 0)
       : 1;
 
@@ -193,8 +190,8 @@ export default function Log() {
               </div>
             </div>
 
-            <div>
-              <div className="flex items-center justify-between mb-2">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
                 <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
                   {category === "water" ? (useTime ? "Duration" : "Amount (Litres)") : "Amount (Kilograms)"}
                 </label>
@@ -211,16 +208,14 @@ export default function Log() {
 
               {category === "water" && useTime ? (
                 <div className="flex gap-2">
-                  <div className="relative flex-1">
-                    <Input
-                      type="number"
-                      value={timeValue}
-                      onChange={e => setTimeValue(e.target.value)}
-                      placeholder="e.g. 10"
-                      className="h-12 rounded-xl pr-12"
-                      required
-                    />
-                  </div>
+                  <Input
+                    type="number"
+                    value={timeValue}
+                    onChange={e => setTimeValue(e.target.value)}
+                    placeholder="e.g. 10"
+                    className="h-12 rounded-xl"
+                    required
+                  />
                   <div className="flex bg-muted p-1 rounded-xl">
                     {["minutes", "hours"].map((unit) => (
                       <button
@@ -250,27 +245,27 @@ export default function Log() {
               )}
 
               {!isNaN(computedAmount) && computedAmount > 0 && (
-              <div className="mt-4 flex flex-col gap-2">
-                {category === "water" && useTime && (
-                  <div className="flex items-center justify-between px-4 py-3 bg-secondary/30 rounded-xl border border-secondary/50">
-                    <span className="text-sm font-medium text-muted-foreground">Estimated Usage</span>
-                    <span className="text-sm font-bold text-primary">{computedAmount} Litres</span>
+                <div className="mt-4 flex flex-col gap-2">
+                  {category === "water" && useTime && (
+                    <div className="flex items-center justify-between px-4 py-3 bg-secondary/30 rounded-xl border border-secondary/50">
+                      <span className="text-sm font-medium text-muted-foreground">Estimated Usage</span>
+                      <span className="text-sm font-bold text-primary">{computedAmount} Litres</span>
+                    </div>
+                  )}
+                  <div className="flex items-center justify-between px-4 py-3 bg-primary/10 rounded-xl border border-primary/20">
+                    <span className="text-sm font-medium text-primary/80">Potential Impact</span>
+                    <span className="text-base font-bold text-primary">
+                      + {calcPointsForEntry(category, subtype, computedAmount)} Points
+                    </span>
                   </div>
-                )}
-
-                <div className="flex items-center justify-between px-4 py-3 bg-primary/10 rounded-xl border border-primary/20">
-                  <span className="text-sm font-medium text-primary/80">Potential Impact</span>
-                  <span className="text-base font-bold text-primary">
-                    + {calcPointsForEntry(category, subtype, computedAmount)} Points
-                  </span>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
 
             <Button
               type="submit"
               disabled={submitting || isNaN(computedAmount) || computedAmount <= 0}
-              className="w-full h-12 rounded-xl text-base font-semibold"
+              className="w-full h-12 rounded-xl text-base font-semibold mt-4"
             >
               {submitting ? <Loader2 size={18} className="animate-spin mr-2" /> : success ? <CheckCircle2 size={18} className="mr-2" /> : <Plus size={18} className="mr-2" />}
               {submitting ? "Saving…" : success ? "Saved!" : "Log Entry"}
@@ -280,7 +275,7 @@ export default function Log() {
 
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <h2 className="font-display text-xl font-semibold">Recent History</h2>
-          <div className="flex bg-muted p-1 rounded-xl w-fit self-start">
+          <div className="flex bg-muted p-1 rounded-xl w-fit">
             {["all", "waste", "water"].map((tab) => (
               <button
                 key={tab}
