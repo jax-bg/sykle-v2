@@ -124,7 +124,6 @@ export default function Home() {
       lifetimePoints={profile?.lifetime_points || 0} 
       size={100} 
     />
-    {/* REMOVED: The two <p> tags that were here */}
   </div>
 
   {/* Right: Info Block */}
@@ -148,18 +147,6 @@ export default function Home() {
             background: 'linear-gradient(90deg, #4aeea3 0%, #f3b62e 100%)' 
           }}
         />
-        {/* Moved text here to ensure it's always visible regardless of bar width */}
-        <span className="absolute left-4 text-sm font-black text-slate-900 drop-shadow-sm">
-          {levelInfo.progress}%
-        </span>
-      </div>
-      
-      {/* Footer Text */}
-      <div className="mt-2 flex justify-between items-center px-1">
-        <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-          Next: <span className="text-foreground">{levelInfo.nextTitle || "Tree"}</span>
-        </p>
-      </div>
     </div>
   </div>
 </div>
