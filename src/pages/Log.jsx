@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/AuthContext";
 
@@ -9,12 +9,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
-// Average litres per hour for each water subtype[cite: 4]
 const WATER_RATES = {
-  shower: 480,    // ~8 L/min
-  tap: 360,       // ~6 L/min
-  dishes: 240,    // ~4 L/min
-  laundry: 300,   // ~5 L/min
+  shower: 480,
+  tap: 360,
+  dishes: 240,
+  laundry: 300,
   other: 360,
 };
 
@@ -33,21 +32,11 @@ export default function Log() {
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (!isLoadingAuth && authChecked) {
-      loadData();
-    }
-  }, [isLoadingAuth, authChecked, profile]);
-
-  async function loadData() {
+  // MEMOIZED LOAD DATA: Pass userId as an argument[cite: 1]
+  const loadData = useCallback(async (userId) => {
+    if (!userId) return;
     setLoading(true);
-    const userId = profile?.id;
-    if (!userId) {
-      setEntries([]);
-      setLoading(false);
-      return;
-    }
-
+    
     const { data: logs, error } = await supabase
       .from('LogEntry')
       .select('*')
@@ -57,12 +46,18 @@ export default function Log() {
 
     if (error) {
       console.error('Failed to load log entries:', error);
-      setEntries([]);
     } else {
       setEntries(logs || []);
     }
     setLoading(false);
-  }
+  }, []);
+
+  // TRIGGER ONLY ON AUTH: Profile is removed from deps to prevent re-fetching on point updates[cite: 1]
+  useEffect(() => {
+    if (!isLoadingAuth && authChecked && profile?.id) {
+      loadData(profile.id);
+    }
+  }, [isLoadingAuth, authChecked, loadData]);
 
   const computedAmount = useTime && category === "water" && timeValue
     ? parseFloat((parseFloat(timeValue) * (timeUnit === "hours" ? 1 : 1 / 60) * WATER_RATES[subtype]).toFixed(1))
@@ -86,30 +81,26 @@ export default function Log() {
       return;
     }
 
-    // 1. Insert the entry[cite: 4]
-    const { data, error: insertError } = await supabase.from('LogEntry').insert([
-      {
-        user_id: userId,
-        category,
-        subtype,
-        amount: computedAmount,
-        entry_date: entryDate,
-      }
-    ]).select();
-
-    if (insertError) {
-      setFormError(insertError.message || 'Failed to create log entry.');
-      setSubmitting(false);
-      return;
-    }
-
-    // OPTIMISTIC UPDATE: Update the history list immediately[cite: 4]
-    if (data && data[0]) {
-      setEntries(prev => [data[0], ...prev].slice(0, 30));
-    }
-
-    // 2. Handle Goal Progress[cite: 4]
     try {
+      // 1. Insert Entry[cite: 1]
+      const { data, error: insertError } = await supabase.from('LogEntry').insert([
+        {
+          user_id: userId,
+          category,
+          subtype,
+          amount: computedAmount,
+          entry_date: entryDate,
+        }
+      ]).select();
+
+      if (insertError) throw insertError;
+
+      // 2. OPTIMISTIC UPDATE: Update local state immediately[cite: 1]
+      if (data && data[0]) {
+        setEntries(prev => [data[0], ...prev].slice(0, 30));
+      }
+
+      // 3. Goal Progress[cite: 1]
       const { data: matchingGoals } = await supabase
         .from('Goals')
         .select('id,current_value,target_value')
@@ -130,34 +121,35 @@ export default function Log() {
             .eq('id', goal.id);
         }));
       }
+
+      // 4. Update Profile (Points/Streak)[cite: 1]
+      const pts = calcPointsForEntry(category, subtype, computedAmount);
+      const lastDate = profile?.last_log_date;
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yStr = yesterday.toISOString().split("T")[0];
+      
+      const streak = lastDate === yStr || lastDate === today()
+        ? (profile?.current_streak || 0) + (lastDate !== today() ? 1 : 0)
+        : 1;
+
+      await updateProfile({
+        points: (profile?.points || 0) + pts,
+        lifetime_points: (profile?.lifetime_points || 0) + pts,
+        current_streak: streak,
+        last_log_date: today(),
+      });
+
+      // Reset UI[cite: 1]
+      setAmount("");
+      setTimeValue("");
+      setSuccess(true);
+      setTimeout(() => setSuccess(false), 2500);
     } catch (err) {
-      console.error('Goal update failed:', err);
+      setFormError(err.message || 'An error occurred.');
+    } finally {
+      setSubmitting(false);
     }
-
-    // 3. Update User Profile (Points and Streak)[cite: 4]
-    const pts = calcPointsForEntry(category, subtype, computedAmount);
-    const lastDate = profile?.last_log_date;
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-    const yStr = yesterday.toISOString().split("T")[0];
-    
-    const streak = lastDate === yStr || lastDate === today()
-      ? (profile?.current_streak || 0) + (lastDate !== today() ? 1 : 0)
-      : 1;
-
-    await updateProfile({
-      points: (profile?.points || 0) + pts,
-      lifetime_points: (profile?.lifetime_points || 0) + pts,
-      current_streak: streak,
-      last_log_date: today(),
-    });
-
-    // Reset Form
-    setAmount("");
-    setTimeValue("");
-    setSuccess(true);
-    setTimeout(() => setSuccess(false), 2500);
-    setSubmitting(false);
   }
 
   const subtypes = category === "water" ? WATER_TYPES : WASTE_TYPES;
@@ -174,7 +166,7 @@ export default function Log() {
       <div className="max-w-2xl mx-auto px-6 py-6">
         <div className="bg-card border border-border/60 rounded-2xl shadow-sm p-6 mb-8">
           <form onSubmit={handleSubmit} className="space-y-5">
-            {/* Category[cite: 4] */}
+            {/* Category[cite: 1] */}
             <div>
               <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2 block">Category</label>
               <div className="grid grid-cols-2 gap-2">
@@ -194,7 +186,7 @@ export default function Log() {
               </div>
             </div>
 
-            {/* Subtype[cite: 4] */}
+            {/* Subtype[cite: 1] */}
             <div>
               <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2 block">Resource Type</label>
               <div className="grid grid-cols-2 gap-2">
@@ -214,7 +206,7 @@ export default function Log() {
               </div>
             </div>
 
-            {/* Input Section[cite: 4] */}
+            {/* Input Section[cite: 1] */}
             <div>
               <div className="flex items-center justify-between mb-2">
                 <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
@@ -226,7 +218,7 @@ export default function Log() {
                     onClick={() => { setUseTime(!useTime); setAmount(""); setTimeValue(""); }}
                     className="text-[10px] text-primary font-bold uppercase tracking-tighter hover:underline"
                   >
-                    {useTime ? "Enter Litres" : "⏱ Use Time"}
+                    {useTime ? "Enter Litres" : "Use Time"}
                   </button>
                 )}
               </div>
