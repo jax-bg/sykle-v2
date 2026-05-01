@@ -8,7 +8,7 @@ import { supabase } from '@/lib/supabase';
 
 /**
  * Sub-component for individual admin user rows
- * Manages its own local state for seeds, lifetime points, and streaks[cite: 1]
+ * Manages its own local state for seeds, lifetime points, and streaks
  */
 function AdminUserRow({ userItem, onUpdate }) {
   const [stats, setStats] = useState({
@@ -79,13 +79,12 @@ export default function Account() {
 
   const [formValues, setFormValues] = useState({
     full_name: '',
-    avatar_url: '',
     email: '',
   });
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
 
-  // Admin States[cite: 1]
+  // Admin States
   const [allUsers, setAllUsers] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [loadingUsers, setLoadingUsers] = useState(false);
@@ -94,7 +93,6 @@ export default function Account() {
     if (profile || user) {
       setFormValues({
         full_name: profile?.full_name || user?.user_metadata?.full_name || user?.email?.split('@')[0] || '',
-        avatar_url: profile?.avatar_url || user?.user_metadata?.picture || '',
         email: profile?.email || user?.email || '',
       });
       
@@ -136,7 +134,6 @@ export default function Account() {
     try {
       await updateProfile({
         full_name: formValues.full_name,
-        avatar_url: formValues.avatar_url,
       });
       setMessage('Profile saved!');
     } catch (err) {
@@ -192,9 +189,9 @@ export default function Account() {
           <div className="space-y-4">
             <div className="flex items-center gap-4">
               <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center overflow-hidden border">
-                {formValues.avatar_url ? (
+                {profile?.avatar_url || user?.user_metadata?.picture ? (
                   <img 
-                    src={formValues.avatar_url} 
+                    src={profile?.avatar_url || user?.user_metadata?.picture} 
                     alt={formValues.full_name} 
                     className="h-full w-full object-cover"
                     referrerPolicy="no-referrer"
@@ -228,7 +225,7 @@ export default function Account() {
           </div>
         </div>
 
-        {/* Admin Management Section[cite: 1] */}
+        {/* Admin Management Section */}
         {profile?.is_admin && (
           <div className="bg-card rounded-3xl border-2 border-primary/20 p-8 shadow-sm">
             <div className="flex items-center gap-3 mb-6">
@@ -277,17 +274,9 @@ export default function Account() {
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium">Avatar URL</label>
-                <Input
-                  value={formValues.avatar_url}
-                  onChange={(e) => setFormValues({ ...formValues, avatar_url: e.target.value })}
-                  placeholder="https://..."
-                />
+                <label className="text-sm font-medium">Email</label>
+                <Input value={formValues.email} readOnly className="bg-muted/50" />
               </div>
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Email</label>
-              <Input value={formValues.email} readOnly />
             </div>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between pt-2">
               <div>
