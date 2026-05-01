@@ -253,9 +253,9 @@ export default function Log() {
                     </div>
                   )}
                   <div className="flex items-center justify-between px-4 py-3 bg-primary/10 rounded-xl border border-primary/20">
-                    <span className="text-sm font-medium text-primary/80">Potential Impact</span>
+                    <span className="text-sm font-medium text-primary/80">you'll Gain</span>
                     <span className="text-base font-bold text-primary">
-                      + {calcPointsForEntry(category, subtype, computedAmount)} Points
+                      + {calcPointsForEntry(category, subtype, computedAmount)} Seeds
                     </span>
                   </div>
                 </div>
