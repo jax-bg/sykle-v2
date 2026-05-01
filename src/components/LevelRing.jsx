@@ -30,7 +30,7 @@ export default function LevelRing({ lifetimePoints = 0, size = 180 }) {
       </svg>
       {/* Visual Only Center */}
       <div className="absolute inset-0 flex items-center justify-center">
-        <span className="text-6xl">{emoji}</span>
+        <span className="text-5xl">{emoji}</span>
       </div>
     </div>
   );
