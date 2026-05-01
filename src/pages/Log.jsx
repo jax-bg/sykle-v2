@@ -250,18 +250,22 @@ export default function Log() {
               )}
 
               {!isNaN(computedAmount) && computedAmount > 0 && (
-                <div className="mt-2 flex justify-between items-center px-1">
-                  {category === "water" && useTime ? (
-                    <p className="text-xs text-muted-foreground">
-                      Estimated: <span className="font-semibold text-primary">{computedAmount} Litres</span>
-                    </p>
-                  ) : <div />}
-                  <p className="text-xs font-medium text-primary">
+              <div className="mt-4 flex flex-col gap-2">
+                {category === "water" && useTime && (
+                  <div className="flex items-center justify-between px-4 py-3 bg-secondary/30 rounded-xl border border-secondary/50">
+                    <span className="text-sm font-medium text-muted-foreground">Estimated Usage</span>
+                    <span className="text-sm font-bold text-primary">{computedAmount} Litres</span>
+                  </div>
+                )}
+
+                <div className="flex items-center justify-between px-4 py-3 bg-primary/10 rounded-xl border border-primary/20">
+                  <span className="text-sm font-medium text-primary/80">Potential Impact</span>
+                  <span className="text-base font-bold text-primary">
                     + {calcPointsForEntry(category, subtype, computedAmount)} Points
-                  </p>
+                  </span>
                 </div>
-              )}
-            </div>
+              </div>
+            )}
 
             <Button
               type="submit"
