@@ -123,7 +123,6 @@ export default function Home() {
       size={100} 
     />
   </div>
-  </div>
 
   <div className="flex-1">
     <div className="flex gap-8 mb-4">
@@ -136,22 +135,13 @@ export default function Home() {
         </h2>
       </div>
 
-      <div className="flex flex-col">
-        <span className="text-[10px] text-muted-foreground uppercase tracking-[0.15em] font-bold">
-          Current Stage
-        </span>
-        <h2 className="font-display text-4xl font-bold text-primary leading-tight">
-          {levelInfo.title}
-        </h2>
-      </div>
-    </div>
-    
-    <div className="bg-card rounded-2xl shadow-sm border border-border/60 p-8 mb-6 flex justify-center items-center">
+{/* Level card */}
+<div className="bg-card rounded-2xl shadow-sm border border-border/60 p-8 mb-6 flex justify-center items-center">
   <LevelRing 
     lifetimePoints={profile?.lifetime_points || 0} 
     size={180} 
   />
-</div>
+</div>        
         {/* This Week Stats */}
         <h2 className="font-display text-xl font-semibold mb-4 text-foreground">This Week</h2>
         <div className="grid grid-cols-2 gap-3 mb-6">
