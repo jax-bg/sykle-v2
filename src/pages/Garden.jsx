@@ -116,9 +116,7 @@ export default function Home() {
       </div>
 
       <div className="max-w-2xl mx-auto px-6 -mt-8">
-     {/* Level card */}
 <div className="bg-card rounded-2xl shadow-sm border border-border/60 p-6 mb-6 flex items-center gap-8">
-  {/* Left: Ring Visual ONLY */}
   <div className="flex flex-col items-center">
     <LevelRing 
       lifetimePoints={profile?.lifetime_points || 0} 
@@ -126,16 +124,13 @@ export default function Home() {
     />
   </div>
 
-  {/* Right: Info Block */}
   <div className="flex-1">
     <div className="flex gap-8 mb-4">
-      {/* New Level Header section */}
       <div className="flex flex-col">
         <span className="text-[10px] text-muted-foreground uppercase tracking-[0.15em] font-bold">
           Level
         </span>
         <h2 className="font-display text-4xl font-bold text-primary leading-tight">
-          {/* Extracting the number from levelInfo if available, or showing the current level */}
           {levelInfo.level || "3"}
         </h2>
       </div>
