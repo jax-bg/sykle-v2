@@ -116,12 +116,12 @@ export default function Home() {
       </div>
 
       <div className="max-w-2xl mx-auto px-6 -mt-8">
-       {/* Level card */}
+      {/* Level card */}
 <div className="bg-card rounded-2xl shadow-sm border border-border/60 p-6 mb-6 flex items-center gap-8">
-  {/* Left: The Ring Visual */}
-  <div className="relative flex items-center justify-center">
-    <LevelRing lifetimePoints={profile?.lifetime_points || 0} size={110} />
-    {/* Optional: Place the 'Lv.1' text inside the ring via the LevelRing component or an absolute div */}
+  {/* Left: The Ring Visual (Cleaned up) */}
+  <div className="flex flex-col items-center">
+    <LevelRing lifetimePoints={profile?.lifetime_points || 0} size={100} />
+    {/* Removed the redundant 'Sapling 6% to Tree' text from here */}
   </div>
 
   {/* Right: The Info Block */}
@@ -144,8 +144,9 @@ export default function Home() {
         />
       </div>
       <div className="flex justify-between items-center">
+        {/* Fixed: Dynamically shows the next level name */}
         <p className="text-sm font-medium text-muted-foreground">
-          {levelInfo.progress}% to <span className="text-foreground">Sprout</span>
+          {levelInfo.progress}% to <span className="text-foreground">{levelInfo.nextTitle}</span>
         </p>
         <p className="text-[10px] text-muted-foreground font-mono uppercase">
           Lv. {levelInfo.level || 1}
@@ -154,7 +155,6 @@ export default function Home() {
     </div>
   </div>
 </div>
-
         {/* This Week Stats */}
         <h2 className="font-display text-xl font-semibold mb-4 text-foreground">This Week</h2>
         <div className="grid grid-cols-2 gap-3 mb-6">
