@@ -155,9 +155,6 @@ export default function Home() {
           {levelInfo.nextTitle || "Grove"}
         </p>
       </div>
-      <div className="w-10 h-10 rounded-xl bg-primary/5 flex items-center justify-center text-xl">
-        {levelInfo.nextEmoji || "🌳"}
-      </div>
     </div>
   </div>
 </div>
