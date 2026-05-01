@@ -150,7 +150,7 @@ export default function Goals() {
               <div className="flex-shrink-0 scale-90 sm:scale-100">
                 <LevelRing 
                   lifetimePoints={profile?.lifetime_points || 0} 
-                  size={100} 
+                  size={120} 
                 />
               </div>
 
