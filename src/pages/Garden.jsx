@@ -143,21 +143,6 @@ export default function Home() {
       </div>
     </div>
   </div>
-
-  {/* Milestone Info - Hidden on mobile to save space, or use smaller text */}
-  <div className="hidden sm:flex flex-col items-end text-right border-l border-border/40 pl-10">
-    <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider mb-2">
-      Next Milestone
-    </span>
-    <div className="flex items-center gap-3 mb-1">
-      <div className="flex flex-col">
-        <p className="text-sm font-bold text-foreground leading-none">
-          {levelInfo.nextTitle || "Grove"}
-        </p>
-      </div>
-    </div>
-  </div>
-</div>
         
         {/* This Week Stats */}
         <h2 className="font-display text-xl font-semibold mb-4 text-foreground">This Week</h2>
