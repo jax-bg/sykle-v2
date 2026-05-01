@@ -117,12 +117,31 @@ export default function Home() {
 
       <div className="max-w-2xl mx-auto px-6 -mt-8">
         {/* Level card */}
-        <div className="bg-card rounded-2xl shadow-sm border border-border/60 p-8 mb-6 flex justify-center items-center">
-          <LevelRing 
-            lifetimePoints={profile?.lifetime_points || 0} 
-            size={180} 
-          />
-        </div>
+<div className="bg-card rounded-2xl shadow-sm border border-border/60 p-8 mb-6 flex items-center gap-10">
+  {/* Left: Progress Ring */}
+  <LevelRing 
+    lifetimePoints={profile?.lifetime_points || 0} 
+    size={160} 
+  />
+
+  {/* Right: Status Info */}
+  <div className="flex flex-col">
+    <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-[0.2em]">
+      Level {levelInfo.level}
+    </span>
+    <h2 className="font-display text-5xl font-bold text-primary leading-tight">
+      {levelInfo.title}
+    </h2>
+    <div className="flex items-center gap-2 mt-1">
+      <span className="text-lg font-black text-foreground">
+        {levelInfo.progress}%
+      </span>
+      <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
+        Complete
+      </span>
+    </div>
+  </div>
+</div>
         
         {/* This Week Stats */}
         <h2 className="font-display text-xl font-semibold mb-4 text-foreground">This Week</h2>
