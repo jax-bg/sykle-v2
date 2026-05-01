@@ -144,10 +144,6 @@ export default function Home() {
         />
       </div>
       <div className="flex justify-between items-center">
-        {/* Fixed: Dynamically shows the next level name */}
-        <p className="text-sm font-medium text-muted-foreground">
-          {levelInfo.progress}% to <span className="text-foreground">{levelInfo.nextTitle}</span>
-        </p>
         <p className="text-[10px] text-muted-foreground font-mono uppercase">
           Lv. {levelInfo.level || 1}
         </p>
