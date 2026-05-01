@@ -4,22 +4,23 @@ import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/AuthContext";
 
 import { calcPointsForEntry, formatDate, today, LOG_CATEGORIES, WASTE_TYPES, WATER_TYPES } from "@/lib/utils";
-import { Droplets, Trash2, Plus, ChevronRight, Loader2, CheckCircle2 } from "lucide-react";
+import { Plus, Loader2, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
 const WATER_RATES = {
-  shower: 480,
-  tap: 360,
-  dishes: 240,
-  laundry: 300,
+  shower: 480,    // ~8 L/min
+  tap: 360,       // ~6 L/min
+  dishes: 240,    // ~4 L/min
+  laundry: 300,   // ~5 L/min
   other: 360,
 };
 
 export default function Log() {
   const { user, profile, updateProfile, isLoadingAuth, authChecked } = useAuth();
   
+  // Form State
   const [category, setCategory] = useState("waste");
   const [subtype, setSubtype] = useState("recyclable");
   const [amount, setAmount] = useState("");
@@ -31,6 +32,7 @@ export default function Log() {
   const [success, setSuccess] = useState(false);
   const [formError, setFormError] = useState(null);
 
+  // History & Tab State
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("all");
@@ -63,7 +65,6 @@ export default function Log() {
     } else {
       setEntries(logs || []);
     }
-
     setLoading(false);
   }
 
@@ -81,16 +82,10 @@ export default function Log() {
     }
 
     setSubmitting(true);
-
     const userId = profile?.id || user?.id;
-    if (!userId) {
-      setFormError('You must be signed in to log an entry.');
-      setSubmitting(false);
-      return;
-    }
 
     const pts = calcPointsForEntry(category, subtype, computedAmount);
-    const { data, error: insertError } = await supabase.from('LogEntry').insert([
+    const { error: insertError } = await supabase.from('LogEntry').insert([
       {
         user_id: userId,
         category,
@@ -98,7 +93,7 @@ export default function Log() {
         amount: computedAmount,
         entry_date: entryDate,
       }
-    ]).select();
+    ]);
 
     if (insertError) {
       setFormError(insertError.message);
@@ -131,7 +126,6 @@ export default function Log() {
     setTimeValue("");
     setSuccess(true);
     setTimeout(() => setSuccess(false), 2500);
-    
     await loadData();
     setSubmitting(false);
   }
@@ -143,12 +137,19 @@ export default function Log() {
 
   const subtypes = category === "water" ? WATER_TYPES : WASTE_TYPES;
 
+  // Helper to find the correct icon for history items
+  const getEntryIcon = (entry) => {
+    const list = entry.category === "water" ? WATER_TYPES : WASTE_TYPES;
+    const match = list.find(item => item.value === entry.subtype);
+    return match ? match.emoji : (entry.category === "water" ? "💧" : "🗑️");
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <div className="bg-gradient-to-br from-primary to-[hsl(178,60%,20%)] text-primary-foreground px-6 pt-10 pb-8">
         <div className="max-w-2xl mx-auto">
           <h1 className="font-display text-3xl font-semibold">Log</h1>
-          <p className="text-primary-foreground/60 text-sm mt-1">Track your waste/water usage.</p>
+          <p className="text-primary-foreground/60 text-sm mt-1">Track your usage.</p>
         </div>
       </div>
 
@@ -165,9 +166,7 @@ export default function Log() {
                     onClick={() => { setCategory(value); setSubtype(value === "water" ? "shower" : "recyclable"); }}
                     className={cn(
                       "flex items-center justify-center gap-2 py-3 rounded-xl font-medium text-sm border transition-all",
-                      category === value
-                        ? "bg-primary text-primary-foreground border-primary"
-                        : "bg-muted border-transparent text-muted-foreground hover:bg-secondary"
+                      category === value ? "bg-primary text-primary-foreground border-primary" : "bg-muted border-transparent text-muted-foreground"
                     )}
                   >
                     <span>{emoji}</span> {label}
@@ -186,9 +185,7 @@ export default function Log() {
                     onClick={() => setSubtype(value)}
                     className={cn(
                       "flex items-center gap-2 px-4 py-3 rounded-xl text-sm border transition-all",
-                      subtype === value
-                        ? "bg-teal-light border-primary text-primary font-medium"
-                        : "border-border bg-background text-foreground hover:bg-muted"
+                      subtype === value ? "bg-teal-light border-primary text-primary font-medium" : "border-border bg-background"
                     )}
                   >
                     <span>{emoji}</span> {label}
@@ -212,15 +209,51 @@ export default function Log() {
                   </button>
                 )}
               </div>
-              <Input
-                type="number"
-                step="0.1"
-                value={useTime ? timeValue : amount}
-                onChange={e => useTime ? setTimeValue(e.target.value) : setAmount(e.target.value)}
-                placeholder="e.g. 10"
-                className="h-12 rounded-xl"
-                required
-              />
+
+              {category === "water" && useTime ? (
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <Input
+                      type="number"
+                      value={timeValue}
+                      onChange={e => setTimeValue(e.target.value)}
+                      placeholder="e.g. 10"
+                      className="h-12 rounded-xl pr-12"
+                      required
+                    />
+                  </div>
+                  <div className="flex bg-muted p-1 rounded-xl">
+                    {["minutes", "hours"].map((unit) => (
+                      <button
+                        key={unit}
+                        type="button"
+                        onClick={() => setTimeUnit(unit)}
+                        className={cn(
+                          "px-3 py-1.5 rounded-lg text-xs font-medium transition-all capitalize",
+                          timeUnit === unit ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"
+                        )}
+                      >
+                        {unit === "minutes" ? "Mins" : "Hrs"}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <Input
+                  type="number"
+                  step="0.1"
+                  value={amount}
+                  onChange={e => setAmount(e.target.value)}
+                  placeholder="e.g. 10"
+                  className="h-12 rounded-xl"
+                  required
+                />
+              )}
+              {useTime && !isNaN(computedAmount) && computedAmount > 0 && (
+                <p className="mt-2 text-xs text-muted-foreground ml-1">
+                  Estimated: <span className="font-semibold text-primary">{computedAmount} Litres</span>
+                </p>
+              )}
             </div>
 
             <Button
@@ -243,9 +276,7 @@ export default function Log() {
                 onClick={() => setActiveTab(tab)}
                 className={cn(
                   "px-4 py-1.5 rounded-lg text-xs font-medium transition-all capitalize",
-                  activeTab === tab 
-                    ? "bg-background text-foreground shadow-sm" 
-                    : "text-muted-foreground hover:text-foreground"
+                  activeTab === tab ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
                 )}
               >
                 {tab}
@@ -266,11 +297,7 @@ export default function Log() {
             {filteredEntries.map(entry => (
               <div key={entry.id} className="bg-card border border-border/60 rounded-2xl px-5 py-4 flex items-center gap-4 hover:border-primary/40 transition-colors">
                 <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center text-xl">
-                {entry.category === "water" ? "💧" : (
-                  entry.subtype === "recyclable" ? "♻️" :
-                  entry.subtype === "food" ? "🍎" :
-                  entry.subtype === "e-waste" ? "📱" : "🗑️"
-                )}
+                  {getEntryIcon(entry)}
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-sm capitalize">{entry.subtype?.replace("-", " ")}</p>
