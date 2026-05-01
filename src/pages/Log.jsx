@@ -137,7 +137,6 @@ export default function Log() {
 
   const subtypes = category === "water" ? WATER_TYPES : WASTE_TYPES;
 
-  // Helper to find the correct icon for history items
   const getEntryIcon = (entry) => {
     const list = entry.category === "water" ? WATER_TYPES : WASTE_TYPES;
     const match = list.find(item => item.value === entry.subtype);
@@ -149,7 +148,7 @@ export default function Log() {
       <div className="bg-gradient-to-br from-primary to-[hsl(178,60%,20%)] text-primary-foreground px-6 pt-10 pb-8">
         <div className="max-w-2xl mx-auto">
           <h1 className="font-display text-3xl font-semibold">Log</h1>
-          <p className="text-primary-foreground/60 text-sm mt-1">Track your usage.</p>
+          <p className="text-primary-foreground/60 text-sm mt-1">Track your impact.</p>
         </div>
       </div>
 
@@ -249,10 +248,18 @@ export default function Log() {
                   required
                 />
               )}
-              {useTime && !isNaN(computedAmount) && computedAmount > 0 && (
-                <p className="mt-2 text-xs text-muted-foreground ml-1">
-                  Estimated: <span className="font-semibold text-primary">{computedAmount} Litres</span>
-                </p>
+
+              {!isNaN(computedAmount) && computedAmount > 0 && (
+                <div className="mt-2 flex justify-between items-center px-1">
+                  {category === "water" && useTime ? (
+                    <p className="text-xs text-muted-foreground">
+                      Estimated: <span className="font-semibold text-primary">{computedAmount} Litres</span>
+                    </p>
+                  ) : <div />}
+                  <p className="text-xs font-medium text-primary">
+                    + {calcPointsForEntry(category, subtype, computedAmount)} Points
+                  </p>
+                </div>
               )}
             </div>
 
