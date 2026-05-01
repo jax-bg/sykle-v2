@@ -140,9 +140,12 @@ export default function Home() {
         <span className="text-[10px] sm:text-xs text-muted-foreground font-medium uppercase tracking-wider">
           Complete
         </span>
+        </div>
       </div>
     </div>
   </div>
+
+
         
         {/* This Week Stats */}
         <h2 className="font-display text-xl font-semibold mb-4 text-foreground">This Week</h2>
