@@ -9,19 +9,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
-// Average litres per hour for each water subtype
 const WATER_RATES = {
-  shower: 480,    // ~8 L/min
-  tap: 360,       // ~6 L/min
-  dishes: 240,    // ~4 L/min
-  laundry: 300,   // ~5 L/min (per hour of machine cycle)
+  shower: 480,
+  tap: 360,
+  dishes: 240,
+  laundry: 300,
   other: 360,
 };
 
 export default function Log() {
   const { user, profile, updateProfile, isLoadingAuth, authChecked } = useAuth();
   
-  // Form State
   const [category, setCategory] = useState("waste");
   const [subtype, setSubtype] = useState("recyclable");
   const [amount, setAmount] = useState("");
@@ -33,12 +31,10 @@ export default function Log() {
   const [success, setSuccess] = useState(false);
   const [formError, setFormError] = useState(null);
 
-  // History & Tab State
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("all");
 
-  // Fix: Removed 'profile' from dependencies to prevent the re-render loop[cite: 3]
   useEffect(() => {
     if (!isLoadingAuth && authChecked && (profile?.id || user?.id)) {
       loadData();
@@ -59,7 +55,7 @@ export default function Log() {
       .select('*')
       .eq('user_id', userId)
       .order('entry_date', { ascending: false })
-      .limit(30);[cite: 3]
+      .limit(30);
 
     if (error) {
       console.error('Failed to load log entries:', error);
@@ -73,7 +69,7 @@ export default function Log() {
 
   const computedAmount = useTime && category === "water" && timeValue
     ? parseFloat((parseFloat(timeValue) * (timeUnit === "hours" ? 1 : 1 / 60) * WATER_RATES[subtype]).toFixed(1))
-    : parseFloat(amount);[cite: 3]
+    : parseFloat(amount);
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -102,7 +98,7 @@ export default function Log() {
         amount: computedAmount,
         entry_date: entryDate,
       }
-    ]).select();[cite: 3]
+    ]).select();
 
     if (insertError) {
       setFormError(insertError.message);
@@ -110,7 +106,6 @@ export default function Log() {
       return;
     }
 
-    // Points and Streak Logic
     const newPoints = (profile?.points || 0) + pts;
     const newLifetime = (profile?.lifetime_points || 0) + pts;
     const lastDate = profile?.last_log_date;
@@ -119,7 +114,7 @@ export default function Log() {
     const yStr = yesterday.toISOString().split("T")[0];
     const streak = lastDate === yStr || lastDate === today()
       ? (profile?.current_streak || 0) + (lastDate !== today() ? 1 : 0)
-      : 1;[cite: 3]
+      : 1;
 
     try {
       await updateProfile({
@@ -132,22 +127,19 @@ export default function Log() {
       console.error('Profile update failed:', err);
     }
 
-    // Reset Form
     setAmount("");
     setTimeValue("");
     setSuccess(true);
     setTimeout(() => setSuccess(false), 2500);
     
-    // Refresh history manually after submission
-    await loadData();[cite: 3]
+    await loadData();
     setSubmitting(false);
   }
 
-  // Filter entries based on active tab
   const filteredEntries = entries.filter(entry => {
     if (activeTab === "all") return true;
     return entry.category === activeTab;
-  });[cite: 2, 3]
+  });
 
   const subtypes = category === "water" ? WATER_TYPES : WASTE_TYPES;
 
@@ -161,10 +153,8 @@ export default function Log() {
       </div>
 
       <div className="max-w-2xl mx-auto px-6 py-6">
-        {/* Logging Form */}
         <div className="bg-card border border-border/60 rounded-2xl shadow-sm p-6 mb-8">
           <form onSubmit={handleSubmit} className="space-y-5">
-            {/* Category Toggle */}
             <div>
               <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2 block">Category</label>
               <div className="grid grid-cols-2 gap-2">
@@ -186,7 +176,6 @@ export default function Log() {
               </div>
             </div>
 
-            {/* Subtype Selection */}
             <div>
               <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2 block">Type</label>
               <div className="grid grid-cols-2 gap-2">
@@ -208,7 +197,6 @@ export default function Log() {
               </div>
             </div>
 
-            {/* Input Field */}
             <div>
               <div className="flex items-center justify-between mb-2">
                 <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
@@ -240,13 +228,12 @@ export default function Log() {
               disabled={submitting || isNaN(computedAmount) || computedAmount <= 0}
               className="w-full h-12 rounded-xl text-base font-semibold"
             >
-              {submitting ? <Loader2 className="animate-spin mr-2" /> : success ? <CheckCircle2 className="mr-2" /> : <Plus className="mr-2" />}
+              {submitting ? <Loader2 size={18} className="animate-spin mr-2" /> : success ? <CheckCircle2 size={18} className="mr-2" /> : <Plus size={18} className="mr-2" />}
               {submitting ? "Saving…" : success ? "Saved!" : "Log Entry"}
             </Button>
           </form>
         </div>
 
-        {/* Improved History Section with Tabs */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <h2 className="font-display text-xl font-semibold">Recent History</h2>
           <div className="flex bg-muted p-1 rounded-xl w-fit self-start">
@@ -265,7 +252,7 @@ export default function Log() {
               </button>
             ))}
           </div>
-        </div>[cite: 2, 3]
+        </div>
 
         {loading ? (
           <div className="flex justify-center py-12"><Loader2 className="animate-spin text-muted-foreground" /></div>
