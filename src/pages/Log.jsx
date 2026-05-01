@@ -4,7 +4,7 @@ import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/AuthContext";
 
 import { calcPointsForEntry, formatDate, today, LOG_CATEGORIES, WASTE_TYPES, WATER_TYPES } from "@/lib/utils";
-import { Plus, Loader2, CheckCircle2, Calendar } from "lucide-react"; // Added Calendar icon
+import { Plus, Loader2, CheckCircle2, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -25,12 +25,19 @@ export default function Log() {
   const [useTime, setUseTime] = useState(false);
   const [timeValue, setTimeValue] = useState("");
   const [timeUnit, setTimeUnit] = useState("minutes");
-  const [entryDate, setEntryDate] = useState(today()); // Controls the date input[cite: 1]
+  const [entryDate, setEntryDate] = useState(today());
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [formError, setFormError] = useState(null);
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // Helper to find the correct emoji based on database subtype[cite: 1]
+  const getSubtypeEmoji = (cat, sub) => {
+    const list = cat === "water" ? WATER_TYPES : WASTE_TYPES;
+    const match = list.find(item => item.value === sub);
+    return match ? match.emoji : (cat === "water" ? "💧" : "♻️");
+  };
 
   const loadData = useCallback(async (userId) => {
     if (!userId) return;
@@ -86,7 +93,7 @@ export default function Log() {
           category,
           subtype,
           amount: computedAmount,
-          entry_date: entryDate, // Uses the selected date[cite: 1]
+          entry_date: entryDate,
         }
       ]).select();
 
@@ -96,7 +103,7 @@ export default function Log() {
         setEntries(prev => [data[0], ...prev].slice(0, 30));
       }
 
-      // Goal update logic[cite: 1]
+      // Update Goals[cite: 1]
       const { data: matchingGoals } = await supabase
         .from('Goals')
         .select('id,current_value,target_value')
@@ -160,7 +167,7 @@ export default function Log() {
       <div className="max-w-2xl mx-auto px-6 py-6">
         <div className="bg-card border border-border/60 rounded-2xl shadow-sm p-6 mb-8">
           <form onSubmit={handleSubmit} className="space-y-5">
-            {/* Category[cite: 1] */}
+            {/* Category Selection[cite: 1] */}
             <div>
               <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2 block">Category</label>
               <div className="grid grid-cols-2 gap-2">
@@ -180,7 +187,7 @@ export default function Log() {
               </div>
             </div>
 
-            {/* Subtype[cite: 1] */}
+            {/* Resource Subtype[cite: 1] */}
             <div>
               <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2 block">Resource Type</label>
               <div className="grid grid-cols-2 gap-2">
@@ -200,7 +207,7 @@ export default function Log() {
               </div>
             </div>
 
-            {/* Input Section[cite: 1] */}
+            {/* Amount/Duration Input[cite: 1] */}
             <div>
               <div className="flex items-center justify-between mb-2">
                 <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
@@ -303,7 +310,8 @@ export default function Log() {
             {entries.map(entry => (
               <div key={entry.id} className="bg-card border border-border/60 rounded-2xl px-5 py-4 flex items-center gap-4 animate-in fade-in slide-in-from-bottom-2">
                 <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center text-xl">
-                  {entry.category === "water" ? "💧" : "♻️"}
+                  {/* Dynamic icon lookup[cite: 1] */}
+                  {getSubtypeEmoji(entry.category, entry.subtype)}
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-bold text-sm capitalize">{entry.subtype?.replace("-", " ")} {entry.category}</p>
