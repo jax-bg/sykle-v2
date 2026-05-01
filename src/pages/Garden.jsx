@@ -116,32 +116,14 @@ export default function Home() {
       </div>
 
       <div className="max-w-2xl mx-auto px-6 -mt-8">
-<div className="bg-card rounded-2xl shadow-sm border border-border/60 p-6 mb-6 flex items-center gap-8">
-  <div className="flex flex-col items-center">
-    <LevelRing 
-      lifetimePoints={profile?.lifetime_points || 0} 
-      size={100} 
-    />
-  </div>
-
-  <div className="flex-1">
-    <div className="flex gap-8 mb-4">
-      <div className="flex flex-col">
-        <span className="text-[10px] text-muted-foreground uppercase tracking-[0.15em] font-bold">
-          Level
-        </span>
-        <h2 className="font-display text-4xl font-bold text-primary leading-tight">
-          {levelInfo.level || "3"}
-        </h2>
-      </div>
-
-{/* Level card */}
-<div className="bg-card rounded-2xl shadow-sm border border-border/60 p-8 mb-6 flex justify-center items-center">
-  <LevelRing 
-    lifetimePoints={profile?.lifetime_points || 0} 
-    size={180} 
-  />
-</div>        
+        {/* Level card */}
+        <div className="bg-card rounded-2xl shadow-sm border border-border/60 p-8 mb-6 flex justify-center items-center">
+          <LevelRing 
+            lifetimePoints={profile?.lifetime_points || 0} 
+            size={180} 
+          />
+        </div>
+        
         {/* This Week Stats */}
         <h2 className="font-display text-xl font-semibold mb-4 text-foreground">This Week</h2>
         <div className="grid grid-cols-2 gap-3 mb-6">
@@ -182,7 +164,6 @@ export default function Home() {
           </Link>
         </div>
       </div>
-    </div>
     </div>
   );
 }
