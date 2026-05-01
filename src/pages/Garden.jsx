@@ -118,34 +118,50 @@ export default function Home() {
       <div className="max-w-2xl mx-auto px-6 -mt-8">
       {/* Level card */}
 <div className="bg-card rounded-2xl shadow-sm border border-border/60 p-6 mb-6 flex items-center gap-8">
-  {/* Left: The Ring Visual (Cleaned up) */}
+  {/* Left: The Ring Visual */}
   <div className="flex flex-col items-center">
-    <LevelRing lifetimePoints={profile?.lifetime_points || 0} size={100} />
-    {/* Removed the redundant 'Sapling 6% to Tree' text from here */}
+    {/* Pass a prop to LevelRing to handle the dark text color if needed */}
+    <LevelRing 
+      lifetimePoints={profile?.lifetime_points || 0} 
+      size={100} 
+      textColor="text-foreground" 
+    />
   </div>
 
   {/* Right: The Info Block */}
   <div className="flex-1">
-    <div className="flex flex-col mb-3">
+    <div className="flex flex-col mb-4">
       <span className="text-[10px] text-muted-foreground uppercase tracking-[0.15em] font-bold">
         Current Stage
       </span>
-      <h2 className="font-display text-3xl font-bold text-primary leading-tight">
+      <h2 className="font-display text-4xl font-bold text-primary leading-tight">
         {levelInfo.title}
       </h2>
     </div>
     
     {/* Progress Bar Container */}
-    <div className="space-y-2">
-      <div className="bg-muted/50 rounded-full h-3 overflow-hidden">
+    <div className="relative">
+      <div className="bg-muted/50 rounded-full h-8 overflow-hidden flex items-center">
         <div
-          className="bg-primary h-full rounded-full transition-all duration-1000 ease-out"
-          style={{ width: `${levelInfo.progress}%` }}
-        />
+          className="h-full rounded-full transition-all duration-1000 ease-out flex items-center justify-start px-4 shadow-inner"
+          style={{ 
+            width: `${levelInfo.progress}%`,
+            background: 'linear-gradient(90deg, #22c55e 0%, #eab308 100%)' // Green to Gold transition
+          }}
+        >
+          {/* Progress text moved inside the bar */}
+          {levelInfo.progress > 10 && (
+            <span className="text-sm font-black text-primary-foreground drop-shadow-sm">
+              {levelInfo.progress}%
+            </span>
+          )}
+        </div>
       </div>
-      <div className="flex justify-between items-center">
-        <p className="text-[10px] text-muted-foreground font-mono uppercase">
-          Lv. {levelInfo.level || 1}
+      
+      {/* Target Level Label below the bar */}
+      <div className="mt-2 flex justify-between items-center px-1">
+        <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+          Next: <span className="text-foreground">{levelInfo.nextTitle || "Next Level"}</span>
         </p>
       </div>
     </div>
