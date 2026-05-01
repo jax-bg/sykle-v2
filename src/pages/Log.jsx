@@ -4,7 +4,7 @@ import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/AuthContext";
 
 import { calcPointsForEntry, formatDate, today, LOG_CATEGORIES, WASTE_TYPES, WATER_TYPES } from "@/lib/utils";
-import { Plus, Loader2, CheckCircle2 } from "lucide-react";
+import { Plus, Loader2, CheckCircle2, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -104,7 +104,9 @@ export default function Log() {
     const newPoints = (profile?.points || 0) + pts;
     const newLifetime = (profile?.lifetime_points || 0) + pts;
     const lastDate = profile?.last_log_date;
-    const streak = lastDate === today() || lastDate === new Date(Date.now() - 864e5).toISOString().split('T')[0]
+    const yesterday = new Date(Date.now() - 864e5).toISOString().split('T')[0];
+    
+    const streak = lastDate === today() || lastDate === yesterday
       ? (profile?.current_streak || 0) + (lastDate !== today() ? 1 : 0)
       : 1;
 
@@ -253,13 +255,29 @@ export default function Log() {
                     </div>
                   )}
                   <div className="flex items-center justify-between px-4 py-3 bg-primary/10 rounded-xl border border-primary/20">
-                    <span className="text-sm font-medium text-primary/80">You'll Gain</span>
+                    <span className="text-sm font-medium text-primary/80">Potential Impact</span>
                     <span className="text-base font-bold text-primary">
-                      + {calcPointsForEntry(category, subtype, computedAmount)} Seeds
+                      + {calcPointsForEntry(category, subtype, computedAmount)} Points
                     </span>
                   </div>
                 </div>
               )}
+            </div>
+
+            {/* RE-ADDED DATE INPUT */}
+            <div className="pt-2">
+              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2 block">Entry Date</label>
+              <div className="relative">
+                <Calendar size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+                <Input
+                  type="date"
+                  value={entryDate}
+                  max={today()}
+                  onChange={(e) => setEntryDate(e.target.value)}
+                  className="h-12 rounded-xl pl-11"
+                  required
+                />
+              </div>
             </div>
 
             <Button
