@@ -136,7 +136,7 @@ export default function Home() {
         {levelInfo.title}
       </h2>
     </div>
-    
+    </div>
     <div className="relative">
       {/* Progress Bar */}
       <div className="bg-muted/50 rounded-full h-8 overflow-hidden flex items-center relative">
