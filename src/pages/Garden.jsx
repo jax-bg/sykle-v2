@@ -145,22 +145,11 @@ export default function Home() {
       </div>
     </div>
     
-    <div className="relative">
-      {/* Progress Bar */}
-      <div className="bg-muted/50 rounded-full h-8 overflow-hidden flex items-center relative">
-        <div
-          className="h-full rounded-full transition-all duration-1000 ease-out"
-          style={{ 
-            width: `${levelInfo.progress}%`,
-            background: 'linear-gradient(90deg, #4aeea3 0%, #f3b62e 100%)' 
-          }}
-        />
-        <span className="absolute left-4 text-sm font-black text-slate-900 drop-shadow-sm">
-          {levelInfo.progress}%
-        </span>
-      </div>
-    </div>
-  </div>
+    <div className="bg-card rounded-2xl shadow-sm border border-border/60 p-8 mb-6 flex justify-center items-center">
+  <LevelRing 
+    lifetimePoints={profile?.lifetime_points || 0} 
+    size={180} 
+  />
 </div>
         {/* This Week Stats */}
         <h2 className="font-display text-xl font-semibold mb-4 text-foreground">This Week</h2>
