@@ -266,7 +266,11 @@ export default function Log() {
             {filteredEntries.map(entry => (
               <div key={entry.id} className="bg-card border border-border/60 rounded-2xl px-5 py-4 flex items-center gap-4 hover:border-primary/40 transition-colors">
                 <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center text-xl">
-                  {entry.category === "water" ? "💧" : "🗑️"}
+                {entry.category === "water" ? "💧" : (
+                  entry.subtype === "recyclable" ? "♻️" :
+                  entry.subtype === "food" ? "🍎" :
+                  entry.subtype === "e-waste" ? "📱" : "🗑️"
+                )}
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-sm capitalize">{entry.subtype?.replace("-", " ")}</p>
