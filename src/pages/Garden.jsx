@@ -116,42 +116,62 @@ export default function Home() {
       </div>
 
       <div className="max-w-2xl mx-auto px-6 -mt-8">
-      {/* Level card */}
-<div className="bg-card rounded-2xl shadow-sm border border-border/60 p-8 mb-6 flex flex-col items-center">
-  {/* Top: The Circular Progress */}
-  <div className="relative mb-4">
+     {/* Level card */}
+<div className="bg-card rounded-2xl shadow-sm border border-border/60 p-6 mb-6 flex items-center gap-8">
+  {/* Left: Ring Visual ONLY */}
+  <div className="flex flex-col items-center">
     <LevelRing 
       lifetimePoints={profile?.lifetime_points || 0} 
-      size={140} 
+      size={100} 
     />
-    {/* Absolute centered percentage if the LevelRing doesn't already show it */}
-    <div className="absolute inset-0 flex flex-col items-center justify-center pt-2">
-      <span className="text-2xl font-black text-primary">
-        {levelInfo.progress}%
-      </span>
-      <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-tighter">
-        Progress
-      </span>
-    </div>
+    {/* Text under ring removed as requested */}
   </div>
 
-  {/* Bottom: Textual Info */}
-  <div className="text-center">
-    <p className="text-[10px] text-muted-foreground uppercase tracking-[0.2em] font-bold mb-1">
-      Current Stage
-    </p>
-    <h2 className="font-display text-4xl font-bold text-primary mb-2">
-      {levelInfo.title}
-    </h2>
+  {/* Right: Info Block */}
+  <div className="flex-1">
+    <div className="flex gap-8 mb-4">
+      {/* New Level Header section */}
+      <div className="flex flex-col">
+        <span className="text-[10px] text-muted-foreground uppercase tracking-[0.15em] font-bold">
+          Level
+        </span>
+        <h2 className="font-display text-4xl font-bold text-primary leading-tight">
+          {/* Extracting the number from levelInfo if available, or showing the current level */}
+          {levelInfo.level || "3"}
+        </h2>
+      </div>
+
+      <div className="flex flex-col">
+        <span className="text-[10px] text-muted-foreground uppercase tracking-[0.15em] font-bold">
+          Current Stage
+        </span>
+        <h2 className="font-display text-4xl font-bold text-primary leading-tight">
+          {levelInfo.title}
+        </h2>
+      </div>
+    </div>
     
-    <div className="flex items-center justify-center gap-2">
-      <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-        Next: <span className="text-foreground">{levelInfo.nextTitle || "Max Level"}</span>
-      </p>
-      <div className="w-1 h-1 rounded-full bg-border" />
-      <p className="text-xs font-medium text-muted-foreground">
-        {levelInfo.pointsToNext || 0} seeds to go
-      </p>
+    <div className="relative">
+      {/* Progress Bar */}
+      <div className="bg-muted/50 rounded-full h-8 overflow-hidden flex items-center relative">
+        <div
+          className="h-full rounded-full transition-all duration-1000 ease-out"
+          style={{ 
+            width: `${levelInfo.progress}%`,
+            background: 'linear-gradient(90deg, #4aeea3 0%, #f3b62e 100%)' 
+          }}
+        />
+        <span className="absolute left-4 text-sm font-black text-slate-900 drop-shadow-sm">
+          {levelInfo.progress}%
+        </span>
+      </div>
+      
+      {/* Footer Text */}
+      <div className="mt-2 flex justify-between items-center px-1">
+        <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+          Next: <span className="text-foreground">{levelInfo.nextTitle || "Tree"}</span>
+        </p>
+      </div>
     </div>
   </div>
 </div>
