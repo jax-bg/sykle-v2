@@ -118,17 +118,16 @@ export default function Home() {
       <div className="max-w-2xl mx-auto px-6 -mt-8">
       {/* Level card */}
 <div className="bg-card rounded-2xl shadow-sm border border-border/60 p-6 mb-6 flex items-center gap-8">
-  {/* Left: The Ring Visual */}
+  {/* Left: Ring Visual ONLY */}
   <div className="flex flex-col items-center">
-    {/* Pass a prop to LevelRing to handle the dark text color if needed */}
     <LevelRing 
       lifetimePoints={profile?.lifetime_points || 0} 
       size={100} 
-      textColor="text-foreground" 
     />
+    {/* REMOVED: The two <p> tags that were here */}
   </div>
 
-  {/* Right: The Info Block */}
+  {/* Right: Info Block */}
   <div className="flex-1">
     <div className="flex flex-col mb-4">
       <span className="text-[10px] text-muted-foreground uppercase tracking-[0.15em] font-bold">
@@ -139,29 +138,26 @@ export default function Home() {
       </h2>
     </div>
     
-    {/* Progress Bar Container */}
     <div className="relative">
-      <div className="bg-muted/50 rounded-full h-8 overflow-hidden flex items-center">
+      {/* Progress Bar */}
+      <div className="bg-muted/50 rounded-full h-8 overflow-hidden flex items-center relative">
         <div
-          className="h-full rounded-full transition-all duration-1000 ease-out flex items-center justify-start px-4 shadow-inner"
+          className="h-full rounded-full transition-all duration-1000 ease-out"
           style={{ 
             width: `${levelInfo.progress}%`,
-            background: 'linear-gradient(90deg, #22c55e 0%, #eab308 100%)' // Green to Gold transition
+            background: 'linear-gradient(90deg, #4aeea3 0%, #f3b62e 100%)' 
           }}
-        >
-          {/* Progress text moved inside the bar */}
-          {levelInfo.progress > 10 && (
-            <span className="text-sm font-black text-primary-foreground drop-shadow-sm">
-              {levelInfo.progress}%
-            </span>
-          )}
-        </div>
+        />
+        {/* Moved text here to ensure it's always visible regardless of bar width */}
+        <span className="absolute left-4 text-sm font-black text-slate-900 drop-shadow-sm">
+          {levelInfo.progress}%
+        </span>
       </div>
       
-      {/* Target Level Label below the bar */}
+      {/* Footer Text */}
       <div className="mt-2 flex justify-between items-center px-1">
         <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-          Next: <span className="text-foreground">{levelInfo.nextTitle || "Next Level"}</span>
+          Next: <span className="text-foreground">{levelInfo.nextTitle || "Tree"}</span>
         </p>
       </div>
     </div>
