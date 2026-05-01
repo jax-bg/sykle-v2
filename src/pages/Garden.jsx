@@ -124,7 +124,6 @@ export default function Home() {
       lifetimePoints={profile?.lifetime_points || 0} 
       size={100} 
     />
-    {/* Text under ring removed as requested */}
   </div>
 
   {/* Right: Info Block */}
@@ -164,13 +163,6 @@ export default function Home() {
         <span className="absolute left-4 text-sm font-black text-slate-900 drop-shadow-sm">
           {levelInfo.progress}%
         </span>
-      </div>
-      
-      {/* Footer Text */}
-      <div className="mt-2 flex justify-between items-center px-1">
-        <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-          Next: <span className="text-foreground">{levelInfo.nextTitle || "Tree"}</span>
-        </p>
       </div>
     </div>
   </div>

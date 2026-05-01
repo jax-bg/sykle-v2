@@ -30,10 +30,6 @@ export default function LevelRing({ lifetimePoints = 0, size = 120 }) {
           <span className="text-xs font-bold text-primary">Lv.{level}</span>
         </div>
       </div>
-      <div className="text-center">
-        <p className="font-semibold text-sm text-foreground">{title}</p>
-        {next && <p className="text-xs text-muted-foreground">{progress}% to {next.title}</p>}
-      </div>
     </div>
   );
 }
