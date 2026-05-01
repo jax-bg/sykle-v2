@@ -72,9 +72,7 @@ export default function Goals() {
 
     const userId = profile?.id;
     if (!userId) {
-      const errorMessage = 'You must be signed in to create a goal.';
-      console.error(errorMessage);
-      setFormError(errorMessage);
+      setFormError('You must be signed in to create a goal.');
       setSubmitting(false);
       return;
     }
@@ -103,17 +101,7 @@ export default function Goals() {
     ]).select();
 
     if (error) {
-      const errorMessage = error.message || 'Failed to create goal.';
-      console.error('Failed to create goal:', error);
-      setFormError(errorMessage);
-      setSubmitting(false);
-      return;
-    }
-
-    if (!data || data.length === 0) {
-      const errorMessage = 'Goal creation failed. Please check your table schema or permissions.';
-      console.error(errorMessage, { data });
-      setFormError(errorMessage);
+      setFormError(error.message || 'Failed to create goal.');
       setSubmitting(false);
       return;
     }
@@ -142,7 +130,6 @@ export default function Goals() {
   }
 
   const levelInfo = getLevelInfo(profile?.lifetime_points || 0);
-  const subtypeOptions = form.category === 'water' ? WATER_TYPES : WASTE_TYPES;
 
   return (
     <div className="min-h-screen bg-background">
@@ -155,45 +142,88 @@ export default function Goals() {
 
       <div className="max-w-2xl mx-auto px-6 py-6">
         {/* Level Card */}
-        <div className="bg-card rounded-2xl border border-border/60 shadow-sm p-6 mb-6">
-          <h2 className="font-display text-xl font-semibold mb-5">Your Plant</h2>
-          <div className="flex gap-6 items-center">
-            <LevelRing lifetimePoints={profile?.lifetime_points || 0} size={110} />
-            <div className="flex-1">
-              <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Total XP</p>
-              <p className="text-3xl font-bold text-primary">{(profile?.lifetime_points || 0).toLocaleString()}</p>
-              <p className="text-sm text-muted-foreground mt-1">redeemable: <strong className="text-foreground">{(profile?.points || 0).toLocaleString()} pts</strong></p>
+        <div className="bg-card rounded-2xl border border-border/60 shadow-sm p-8 mb-8">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 pb-8 border-b border-border/40">
+            <div className="flex items-center gap-8">
+              {/* Left: Progress Ring */}
+              <LevelRing 
+                lifetimePoints={profile?.lifetime_points || 0} 
+                size={140} 
+              />
+
+              {/* Middle: Status Info */}
+              <div className="flex-1">
+                <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-[0.2em] mb-1">
+                  Current Stage
+                </p>
+                <h2 className="font-display text-4xl font-bold text-primary leading-tight">
+                  {levelInfo.title}
+                </h2>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="text-lg font-black text-foreground">
+                    {(profile?.lifetime_points || 0).toLocaleString()}
+                  </span>
+                  <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
+                    Total XP
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Right: Seeds Balance */}
+            <div className="flex flex-col md:items-end text-left md:text-right border-t md:border-t-0 md:border-l border-border/40 pt-6 md:pt-0 md:pl-10">
+              <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider mb-1">
+                Redeemable Seeds
+              </span>
+              <p className="text-3xl font-black text-gold">
+                {(profile?.points || 0).toLocaleString()}
+              </p>
+              <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-tighter mt-1">
+                Available for harvest
+              </p>
             </div>
           </div>
 
-          {/* Level milestones */}
-          <div className="mt-6 space-y-2">
-            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">Level Milestones</p>
-            {LEVEL_MILESTONES.map(m => {
-              const unlocked = (profile?.lifetime_points || 0) >= m.points;
-              const isCurrent = levelInfo.level === m.level;
-              return (
-                <div key={m.level} className={cn(
-                  "flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all",
-                  isCurrent ? "bg-teal-light border border-primary/30" : unlocked ? "opacity-100" : "opacity-40"
-                )}>
-                  <span className="text-xl">{m.emoji}</span>
-                  <div className="flex-1">
-                    <p className="font-medium text-sm">{m.title}</p>
-                    <p className="text-xs text-muted-foreground">{m.points.toLocaleString()} XP</p>
+          {/* Level milestones - Grid Layout */}
+          <div className="mt-8">
+            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.15em] mb-4">
+              Growth Journey
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {LEVEL_MILESTONES.slice(0, 8).map(m => {
+                const unlocked = (profile?.lifetime_points || 0) >= m.points;
+                const isCurrent = levelInfo.level === m.level;
+                return (
+                  <div key={m.level} className={cn(
+                    "flex items-center gap-3 px-4 py-3 rounded-2xl border transition-all",
+                    isCurrent 
+                      ? "bg-primary/5 border-primary/30 shadow-sm" 
+                      : unlocked 
+                        ? "bg-background border-border/60" 
+                        : "bg-muted/30 border-transparent opacity-50"
+                  )}>
+                    <span className="text-2xl">{m.emoji}</span>
+                    <div className="flex-1">
+                      <p className={cn("text-sm font-bold", isCurrent ? "text-primary" : "text-foreground")}>
+                        {m.title}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground font-medium">
+                        {m.points.toLocaleString()} XP
+                      </p>
+                    </div>
+                    {unlocked && !isCurrent && <CheckCircle2 size={16} className="text-primary/60" />}
+                    {isCurrent && <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />}
                   </div>
-                  {unlocked && <CheckCircle2 size={18} className="text-primary" />}
-                  {isCurrent && <span className="text-xs bg-primary text-primary-foreground px-2 py-0.5 rounded-full">Current</span>}
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
         </div>
 
-        {/* Goals */}
+        {/* Goals Header */}
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="font-display text-xl font-semibold">My Plants</h2>
+            <h2 className="font-display text-xl font-semibold">My Goals</h2>
             {formSuccess && <p className="text-sm text-green-600 mt-1">{formSuccess}</p>}
           </div>
           <Button
@@ -286,7 +316,7 @@ export default function Goals() {
               <div className="flex gap-3">
                 <Button type="button" variant="outline" onClick={() => setShowForm(false)} className="flex-1 rounded-xl">Cancel</Button>
                 <Button type="submit" disabled={submitting} className="flex-1 rounded-xl">
-                  {submitting ? <Loader2 size={16} className="animate-spin mr-2" /> : null}
+                  {submitting && <Loader2 size={16} className="animate-spin mr-2" />}
                   Create Goal
                 </Button>
               </div>
@@ -323,7 +353,7 @@ export default function Goals() {
                       <span className="text-muted-foreground">{total.toFixed(1)} / {goal.target_value}</span>
                       <span className="font-medium text-primary">{Math.round(progress)}%</span>
                     </div>
-                    <div className="bg-muted rounded-full h-2.5">
+                    <div className="bg-muted rounded-full h-2.5 overflow-hidden">
                       <div
                         className={cn("h-2.5 rounded-full transition-all duration-700", progress >= 80 ? "bg-green-500" : progress >= 40 ? "bg-primary" : "bg-amber-500")}
                         style={{ width: `${progress}%` }}

@@ -3,368 +3,207 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/AuthContext";
 
-import { getLevelInfo, LOG_CATEGORIES, WASTE_TYPES, WATER_TYPES } from "@/lib/utils";
+import { getLevelInfo, today } from "@/lib/utils";
 import LevelRing from "@/components/LevelRing";
-import { Plus, Loader2, Trash2, CheckCircle2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
+import StatCard from "@/components/StatCard";
+import { Flame, Droplets, Trash2, Recycle, Star } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 
-const LEVEL_MILESTONES = [
-  { level: 1, title: "Seedling", emoji: "🌱", points: 0 },
-  { level: 2, title: "Sprout", emoji: "🌿", points: 200 },
-  { level: 3, title: "Sapling", emoji: "🪴", points: 500 },
-  { level: 4, title: "Tree", emoji: "🌴", points: 1000 },
-  { level: 5, title: "Grove", emoji: "🌳", points: 2000 },
-  { level: 6, title: "Forest", emoji: "🌲", points: 3500 },
-  { level: 7, title: "Rainforest", emoji: "🎄", points: 5500 },
-  { level: 8, title: "Biome", emoji: "🏞️", points: 8000 },
-  { level: 9, title: "Ecosystem", emoji: "🌎", points: 12000 },
-  { level: 10, title: "Earth Guardian", emoji: "🌟", points: 18000 },
+const tips = [
+  "Turn off the tap while brushing to save water.",
+  "Use a reusable bag to cut your plastic usage.",
+  "Fixing leaks around the house can reduce not only wasted water but your utility bill too.",
+  "Segregate your trash before disposal to improve waste management efficiency.",
+  "Avoid single-use plastics in line with your region's regulations.",
+  "Compost leftover food scraps to create mulch.",
+  "Using cold water for your laundry can save tons of energy.",
 ];
 
-export default function Goals() {
-  const { profile, isLoadingAuth, authChecked } = useAuth();
-  const [goals, setGoals] = useState([]);
-  const [showForm, setShowForm] = useState(false);
+export default function Home() {
+  const navigate = useNavigate();
+  const { isAuthenticated, logout, profile, isLoadingAuth, authChecked } = useAuth();
+  const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
-  const [formError, setFormError] = useState(null);
-  const [formSuccess, setFormSuccess] = useState(null);
-  const [form, setForm] = useState({ category: "water", subtype: "shower", title: "", target_value: "" });
+  const [tip] = useState(tips[Math.floor(Math.random() * tips.length)]);
 
   useEffect(() => {
     if (!isLoadingAuth && authChecked) {
-      loadData();
+      load();
     }
   }, [isLoadingAuth, authChecked, profile]);
 
-  async function loadData() {
+  async function load() {
     setLoading(true);
     const userId = profile?.id;
     if (!userId) {
-      setGoals([]);
+      setEntries([]);
       setLoading(false);
       return;
     }
 
-    const { data: goalsData, error: goalsError } = await supabase
-      .from('Goals')
+    const { data: logs, error } = await supabase
+      .from('LogEntry')
       .select('*')
       .eq('user_id', userId)
-      .eq('is_completed', false);
+      .order('entry_date', { ascending: false })
+      .limit(100);
 
-    if (goalsError) {
-      console.error('Failed to load goals:', goalsError);
-      setGoals([]);
+    if (error) {
+      console.error('Failed to load log entries:', error);
+      setEntries([]);
     } else {
-      setGoals(goalsData || []);
+      setEntries(logs || []);
     }
 
     setLoading(false);
   }
 
-  async function handleCreate(e) {
-    e.preventDefault();
-    setFormError(null);
-    setFormSuccess(null);
-    setSubmitting(true);
-
-    const userId = profile?.id;
-    if (!userId) {
-      setFormError('You must be signed in to create a goal.');
-      setSubmitting(false);
-      return;
-    }
-
-    const targetAmount = parseFloat(form.target_value);
-    if (isNaN(targetAmount) || targetAmount <= 0) {
-      setFormError('Please enter a valid target value.');
-      setSubmitting(false);
-      return;
-    }
-
-    const subtypeLabel = WASTE_TYPES.concat(WATER_TYPES).find(t => t.value === form.subtype)?.label || form.subtype;
-    const categoryLabel = LOG_CATEGORIES.find(c => c.value === form.category)?.label || form.category;
-    const goalTitle = form.title.trim() || `${subtypeLabel} ${categoryLabel}`;
-
-    const { data, error } = await supabase.from('Goals').insert([
-      {
-        user_id: userId,
-        title: goalTitle,
-        category: form.category,
-        subtype: form.subtype,
-        target_value: targetAmount,
-        current_value: 0,
-        is_completed: false,
-      }
-    ]).select();
-
-    if (error) {
-      setFormError(error.message || 'Failed to create goal.');
-      setSubmitting(false);
-      return;
-    }
-
-    setFormSuccess('Goal created successfully!');
-    setShowForm(false);
-    setForm({ category: "water", subtype: "shower", title: "", target_value: "" });
-    await loadData();
-    setSubmitting(false);
-  }
-
-  async function deleteGoal(id) {
-    const { error } = await supabase.from('Goals').update({ is_completed: true }).eq('id', id);
-    if (error) {
-      console.error('Failed to delete goal:', error);
-      return;
-    }
-    setGoals(gs => gs.filter(g => g.id !== id));
-  }
-
-  function getGoalProgress(goal) {
-    const current = goal.current_value || 0;
-    const target = goal.target_value || 1;
-    const progress = Math.min(100, (current / target) * 100);
-    return { total: current, progress };
-  }
-
   const levelInfo = getLevelInfo(profile?.lifetime_points || 0);
+
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+  const recentEntries = entries.filter(e => new Date(e.entry_date) >= sevenDaysAgo);
+  const totalWater = recentEntries.filter(e => e.category === "water").reduce((s, e) => s + (e.amount || 0), 0);
+  const totalWaste = recentEntries.filter(e => e.category === "waste").reduce((s, e) => s + (e.amount || 0), 0);
+  const totalRecycled = recentEntries.filter(e => e.subtype === "recyclable" || e.subtype === "e-waste").reduce((s, e) => s + (e.amount || 0), 0);
+
+  const firstName = profile?.full_name?.split(" ")[0] || "TPSian";
+
+  if (loading) return (
+    <div className="flex items-center justify-center min-h-screen">
+      <div className="w-8 h-8 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="bg-gradient-to-br from-primary to-[hsl(178,60%,20%)] text-primary-foreground px-6 pt-10 pb-8">
+      {/* Header */}
+      <div className="bg-gradient-to-br from-primary to-[hsl(178,60%,20%)] text-primary-foreground px-6 pt-10 pb-16">
         <div className="max-w-2xl mx-auto">
-          <h1 className="font-display text-3xl font-semibold">Plant</h1>
-          <p className="text-primary-foreground/60 text-sm mt-1">Set goals to earn seeds.</p>
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <p className="text-primary-foreground/60 text-sm">Welcome back,</p>
+              <h1 className="font-display text-3xl font-semibold">{firstName}</h1>
+            </div>
+            <div className="flex items-center gap-2 bg-white/10 backdrop-blur rounded-2xl px-4 py-2">
+              <Star size={16} className="text-gold fill-gold" />
+              <span className="font-bold text-lg">{(profile?.points || 0).toLocaleString()}</span>
+              <span className="text-xs text-primary-foreground/60">Seeds</span>
+              {isAuthenticated ? (
+                <button
+                  onClick={() => logout(false)}
+                  className="ml-3 rounded-full bg-secondary/90 px-3 py-1 text-xs font-semibold text-white transition hover:opacity-90"
+                >
+                  Sign out
+                </button>
+              ) : (
+                <button
+                  onClick={() => navigate("/login")}
+                  className="ml-3 rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground transition hover:opacity-90"
+                >
+                  Sign in
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Streak */}
+          <div className="flex items-center gap-2 bg-white/10 backdrop-blur rounded-2xl px-4 py-3 w-fit">
+            <Flame size={18} className="text-orange-300" />
+            <span className="font-semibold">{profile?.current_streak || 0} day streak</span>
+          </div>
         </div>
       </div>
 
-      <div className="max-w-2xl mx-auto px-6 py-6">
-        {/* Level Card */}
-        <div className="bg-card rounded-2xl border border-border/60 shadow-sm p-8 mb-8">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 pb-8 border-b border-border/40">
-            <div className="flex items-center gap-8">
-              {/* Left: Progress Ring */}
-              <LevelRing 
-                lifetimePoints={profile?.lifetime_points || 0} 
-                size={140} 
-              />
+      <div className="max-w-2xl mx-auto px-6 -mt-8">
+      {/* Level card */}
+<div className="bg-card rounded-2xl shadow-sm border border-border/60 p-8 mb-6 flex items-center justify-between">
+  <div className="flex items-center gap-10">
+    {/* Left: Progress Ring */}
+    <LevelRing 
+      lifetimePoints={profile?.lifetime_points || 0} 
+      size={160} 
+    />
 
-              {/* Middle: Status Info */}
-              <div className="flex-1">
-                <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-[0.2em] mb-1">
-                  Current Stage
-                </p>
-                <h2 className="font-display text-4xl font-bold text-primary leading-tight">
-                  {levelInfo.title}
-                </h2>
-                <div className="flex items-center gap-2 mt-1">
-                  <span className="text-lg font-black text-foreground">
-                    {(profile?.lifetime_points || 0).toLocaleString()}
-                  </span>
-                  <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
-                    Total XP
-                  </span>
-                </div>
-              </div>
-            </div>
+    {/* Middle: Status Info */}
+    <div className="flex flex-col">
+      <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-[0.2em]">
+        Level {levelInfo.level}
+      </span>
+      <h2 className="font-display text-5xl font-bold text-primary leading-tight">
+        {levelInfo.title}
+      </h2>
+      <div className="flex items-center gap-2 mt-1">
+        <span className="text-lg font-black text-foreground">
+          {levelInfo.progress}%
+        </span>
+        <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
+          Complete
+        </span>
+      </div>
+    </div>
+  </div>
 
-            {/* Right: Seeds Balance */}
-            <div className="flex flex-col md:items-end text-left md:text-right border-t md:border-t-0 md:border-l border-border/40 pt-6 md:pt-0 md:pl-10">
-              <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider mb-1">
-                Redeemable Seeds
-              </span>
-              <p className="text-3xl font-black text-gold">
-                {(profile?.points || 0).toLocaleString()}
-              </p>
-              <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-tighter mt-1">
-                Available for harvest
-              </p>
-            </div>
-          </div>
-
-          {/* Level milestones - Grid Layout */}
-          <div className="mt-8">
-            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.15em] mb-4">
-              Growth Journey
-            </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {LEVEL_MILESTONES.slice(0, 8).map(m => {
-                const unlocked = (profile?.lifetime_points || 0) >= m.points;
-                const isCurrent = levelInfo.level === m.level;
-                return (
-                  <div key={m.level} className={cn(
-                    "flex items-center gap-3 px-4 py-3 rounded-2xl border transition-all",
-                    isCurrent 
-                      ? "bg-primary/5 border-primary/30 shadow-sm" 
-                      : unlocked 
-                        ? "bg-background border-border/60" 
-                        : "bg-muted/30 border-transparent opacity-50"
-                  )}>
-                    <span className="text-2xl">{m.emoji}</span>
-                    <div className="flex-1">
-                      <p className={cn("text-sm font-bold", isCurrent ? "text-primary" : "text-foreground")}>
-                        {m.title}
-                      </p>
-                      <p className="text-[10px] text-muted-foreground font-medium">
-                        {m.points.toLocaleString()} XP
-                      </p>
-                    </div>
-                    {unlocked && !isCurrent && <CheckCircle2 size={16} className="text-primary/60" />}
-                    {isCurrent && <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+  {/* Right: Milestone Info */}
+  <div className="hidden sm:flex flex-col items-end text-right border-l border-border/40 pl-10">
+    <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider mb-2">
+      Next Milestone
+    </span>
+    <div className="flex items-center gap-3 mb-1">
+      <div className="flex flex-col">
+        <p className="text-sm font-bold text-foreground leading-none">
+          {levelInfo.nextTitle || "Grove"}
+        </p>
+        <p className="text-[10px] text-muted-foreground font-medium">
+          {levelInfo.pointsToNext?.toLocaleString() || "0"} seeds away
+        </p>
+      </div>
+      <div className="w-10 h-10 rounded-xl bg-primary/5 flex items-center justify-center text-xl">
+        {levelInfo.nextEmoji || "🌳"}
+      </div>
+    </div>
+  </div>
+</div>
+        
+        {/* This Week Stats */}
+        <h2 className="font-display text-xl font-semibold mb-4 text-foreground">This Week</h2>
+        <div className="grid grid-cols-2 gap-3 mb-6">
+          <StatCard icon="💧" label="Water Used" value={totalWater.toFixed(0)} unit="L" color="blue" />
+          <StatCard icon="🗑️" label="Waste Logged" value={totalWaste.toFixed(1)} unit="kg" color="teal" />
+          <StatCard icon="♻️" label="Recycled" value={totalRecycled.toFixed(1)} unit="kg" color="green" />
+          <StatCard icon="📝" label="Log Entries" value={recentEntries.length} unit="this week" color="purple" />
         </div>
 
-        {/* Goals Header */}
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h2 className="font-display text-xl font-semibold">My Goals</h2>
-            {formSuccess && <p className="text-sm text-green-600 mt-1">{formSuccess}</p>}
-          </div>
-          <Button
-            size="sm"
-            onClick={() => {
-              setShowForm(v => !v);
-              setFormError(null);
-              setFormSuccess(null);
-            }}
-            className="rounded-xl gap-1.5"
-          >
-            <Plus size={16} /> New Goal
-          </Button>
+        {/* Tip of the day */}
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 mb-6">
+          <p className="text-xs font-medium text-amber-600 uppercase tracking-wide mb-1">Here's a Tip</p>
+          <p className="text-sm text-amber-900">{tip}</p>
         </div>
 
-        {/* Goal form */}
-        {showForm && (
-          <div className="bg-card border border-border/60 rounded-2xl p-5 mb-5 shadow-sm">
-            <form onSubmit={handleCreate} className="space-y-4">
-              <div className="grid gap-4 md:grid-cols-2">
-                <div>
-                  <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1.5 block">Category</label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {LOG_CATEGORIES.map(cat => (
-                      <button
-                        key={cat.value}
-                        type="button"
-                        onClick={() => setForm(f => ({ ...f, category: cat.value, subtype: cat.value === 'water' ? 'shower' : 'recyclable' }))}
-                        className={cn(
-                          "flex items-center justify-center gap-2 py-3 rounded-xl font-medium text-sm border transition-all",
-                          form.category === cat.value
-                            ? "bg-primary text-primary-foreground border-primary"
-                            : "bg-muted border-transparent text-muted-foreground hover:bg-secondary"
-                        )}
-                      >
-                        <span>{cat.emoji}</span> {cat.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1.5 block">Type</label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {(form.category === 'water' ? WATER_TYPES : WASTE_TYPES).map(typeOption => (
-                      <button
-                        key={typeOption.value}
-                        type="button"
-                        onClick={() => setForm(f => ({ ...f, subtype: typeOption.value }))}
-                        className={cn(
-                          "flex items-center gap-2 px-4 py-3 rounded-xl text-sm border transition-all",
-                          form.subtype === typeOption.value
-                            ? "bg-teal-light border-primary text-primary font-medium"
-                            : "border-border bg-background text-foreground hover:bg-muted"
-                        )}
-                      >
-                        <span>{typeOption.emoji}</span> {typeOption.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid gap-4 md:grid-cols-2">
-                <div>
-                  <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1.5 block">Goal name</label>
-                  <Input
-                    value={form.title}
-                    onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
-                    placeholder="e.g. Reduce shower water"
-                    required
-                    className="rounded-xl h-11"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1.5 block">Target value</label>
-                  <Input
-                    type="number"
-                    min="0"
-                    step="0.1"
-                    value={form.target_value}
-                    onChange={e => setForm(f => ({ ...f, target_value: e.target.value }))}
-                    placeholder="e.g. 200"
-                    required
-                    className="rounded-xl h-11"
-                  />
-                </div>
-              </div>
-
-              <div className="flex gap-3">
-                <Button type="button" variant="outline" onClick={() => setShowForm(false)} className="flex-1 rounded-xl">Cancel</Button>
-                <Button type="submit" disabled={submitting} className="flex-1 rounded-xl">
-                  {submitting && <Loader2 size={16} className="animate-spin mr-2" />}
-                  Create Goal
-                </Button>
-              </div>
-              {formError && <p className="text-sm text-red-600">{formError}</p>}
-            </form>
-          </div>
-        )}
-
-        {loading ? (
-          <div className="flex justify-center py-12"><Loader2 className="animate-spin text-muted-foreground" /></div>
-        ) : goals.length === 0 ? (
-          <div className="text-center py-12 text-muted-foreground">
-            <p className="text-4xl mb-3">🎯</p>
-            <p className="font-medium">No active goals yet</p>
-            <p className="text-sm mt-1">Set a goal to challenge yourself!</p>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {goals.map(goal => {
-              const { total, progress } = getGoalProgress(goal);
-              return (
-                <div key={goal.id} className="bg-card border border-border/60 rounded-2xl p-5 shadow-sm">
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between mb-3">
-                    <div>
-                      <p className="font-semibold">{goal.title}</p>
-                      <p className="text-xs text-muted-foreground capitalize">{goal.subtype} · {goal.category}</p>
-                    </div>
-                    <button onClick={() => deleteGoal(goal.id)} className="text-muted-foreground hover:text-destructive transition-colors p-1">
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">{total.toFixed(1)} / {goal.target_value}</span>
-                      <span className="font-medium text-primary">{Math.round(progress)}%</span>
-                    </div>
-                    <div className="bg-muted rounded-full h-2.5 overflow-hidden">
-                      <div
-                        className={cn("h-2.5 rounded-full transition-all duration-700", progress >= 80 ? "bg-green-500" : progress >= 40 ? "bg-primary" : "bg-amber-500")}
-                        style={{ width: `${progress}%` }}
-                      />
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
+        {/* Quick Actions */}
+        <h2 className="font-display text-xl font-semibold mb-4 text-foreground">Quick Actions</h2>
+        <div className="grid grid-cols-2 gap-3 mb-8">
+          <Link to="/log" className="bg-primary text-primary-foreground rounded-2xl p-5 flex flex-col gap-2 hover:opacity-90 transition-opacity">
+            <span className="text-2xl">📝</span>
+            <span className="font-semibold">Log</span>
+            <span className="text-xs text-primary-foreground/70">Track your waste or water</span>
+          </Link>
+          <Link to="/plant" className="bg-card border border-border rounded-2xl p-5 flex flex-col gap-2 hover:bg-muted transition-colors">
+            <span className="text-2xl">🎯</span>
+            <span className="font-semibold">Plant</span>
+            <span className="text-xs text-muted-foreground">View your goals</span>
+          </Link>
+          <Link to="/oasis" className="bg-card border border-border rounded-2xl p-5 flex flex-col gap-2 hover:bg-muted transition-colors">
+            <span className="text-2xl">🗺️</span>
+            <span className="font-semibold">Oasis</span>
+            <span className="text-xs text-muted-foreground">Disposal sites near you</span>
+          </Link>
+          <Link to="/harvest" className="bg-gold/10 border border-gold/30 rounded-2xl p-5 flex flex-col gap-2 hover:bg-gold/20 transition-colors">
+            <span className="text-2xl">🎁</span>
+            <span className="font-semibold">Harvest</span>
+            <span className="text-xs text-muted-foreground">Use your seeds</span>
+          </Link>
+        </div>
       </div>
     </div>
   );
