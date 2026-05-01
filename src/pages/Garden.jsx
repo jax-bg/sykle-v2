@@ -60,7 +60,6 @@ export default function Home() {
 
   const levelInfo = getLevelInfo(profile?.lifetime_points || 0);
 
-  // Stats for last 7 days
   const sevenDaysAgo = new Date();
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
   const recentEntries = entries.filter(e => new Date(e.entry_date) >= sevenDaysAgo);
@@ -117,21 +116,44 @@ export default function Home() {
       </div>
 
       <div className="max-w-2xl mx-auto px-6 -mt-8">
-        {/* Level card */}
-        <div className="bg-card rounded-2xl shadow-lg border border-border/60 p-6 mb-6 flex items-center gap-6">
-          <LevelRing lifetimePoints={profile?.lifetime_points || 0} size={100} />
-          <div className="flex-1">
-            <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium mb-1">Your Plant</p>
-            <p className="font-display text-2xl font-semibold text-primary">{levelInfo.title}</p>
-            <div className="mt-3 bg-muted rounded-full h-2">
-              <div
-                className="bg-primary h-2 rounded-full transition-all duration-700"
-                style={{ width: `${levelInfo.progress}%` }}
-              />
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">{levelInfo.progress}% to next level</p>
-          </div>
-        </div>
+       {/* Level card */}
+<div className="bg-card rounded-2xl shadow-sm border border-border/60 p-6 mb-6 flex items-center gap-8">
+  {/* Left: The Ring Visual */}
+  <div className="relative flex items-center justify-center">
+    <LevelRing lifetimePoints={profile?.lifetime_points || 0} size={110} />
+    {/* Optional: Place the 'Lv.1' text inside the ring via the LevelRing component or an absolute div */}
+  </div>
+
+  {/* Right: The Info Block */}
+  <div className="flex-1">
+    <div className="flex flex-col mb-3">
+      <span className="text-[10px] text-muted-foreground uppercase tracking-[0.15em] font-bold">
+        Current Stage
+      </span>
+      <h2 className="font-display text-3xl font-bold text-primary leading-tight">
+        {levelInfo.title}
+      </h2>
+    </div>
+    
+    {/* Progress Bar Container */}
+    <div className="space-y-2">
+      <div className="bg-muted/50 rounded-full h-3 overflow-hidden">
+        <div
+          className="bg-primary h-full rounded-full transition-all duration-1000 ease-out"
+          style={{ width: `${levelInfo.progress}%` }}
+        />
+      </div>
+      <div className="flex justify-between items-center">
+        <p className="text-sm font-medium text-muted-foreground">
+          {levelInfo.progress}% to <span className="text-foreground">Sprout</span>
+        </p>
+        <p className="text-[10px] text-muted-foreground font-mono uppercase">
+          Lv. {levelInfo.level || 1}
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
 
         {/* This Week Stats */}
         <h2 className="font-display text-xl font-semibold mb-4 text-foreground">This Week</h2>
