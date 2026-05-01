@@ -27,6 +27,7 @@ export default function LevelRing({ lifetimePoints = 0, size = 120 }) {
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
           <span className="text-2xl">{emoji}</span>
+          {/* Level span removed from here */}
         </div>
       </div>
     </div>
