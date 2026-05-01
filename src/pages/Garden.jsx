@@ -154,9 +154,6 @@ export default function Home() {
         <p className="text-sm font-bold text-foreground leading-none">
           {levelInfo.nextTitle || "Grove"}
         </p>
-        <p className="text-[10px] text-muted-foreground font-medium">
-          {levelInfo.pointsToNext?.toLocaleString() || "0"} seeds away
-        </p>
       </div>
       <div className="w-10 h-10 rounded-xl bg-primary/5 flex items-center justify-center text-xl">
         {levelInfo.nextEmoji || "🌳"}
