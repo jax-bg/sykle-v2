@@ -57,6 +57,7 @@ export default function Log() {
       .select('*')
       .eq('user_id', userId)
       .order('entry_date', { ascending: false })
+      .order('created_at', { ascending: false }) // Added secondary sort to show newest entries first
       .limit(30);
 
     if (error) {
@@ -85,6 +86,8 @@ export default function Log() {
     const userId = profile?.id || user?.id;
 
     const pts = calcPointsForEntry(category, subtype, computedAmount);
+    
+    // Insert new entry
     const { error: insertError } = await supabase.from('LogEntry').insert([
       {
         user_id: userId,
@@ -101,6 +104,7 @@ export default function Log() {
       return;
     }
 
+    // Update Profile Stats
     const newPoints = (profile?.points || 0) + pts;
     const newLifetime = (profile?.lifetime_points || 0) + pts;
     const lastDate = profile?.last_log_date;
@@ -121,11 +125,15 @@ export default function Log() {
       console.error('Profile update failed:', err);
     }
 
+    // Reset Form and Refresh List
     setAmount("");
     setTimeValue("");
     setSuccess(true);
-    setTimeout(() => setSuccess(false), 2500);
+    
+    // Force immediate data reload to replace random/placeholder views
     await loadData();
+    
+    setTimeout(() => setSuccess(false), 2500);
     setSubmitting(false);
   }
 
@@ -146,14 +154,15 @@ export default function Log() {
     <div className="min-h-screen bg-background">
       <div className="bg-gradient-to-br from-primary to-[hsl(178,60%,20%)] text-primary-foreground px-6 pt-10 pb-8">
         <div className="max-w-2xl mx-auto">
-          <h1 className="font-display text-3xl font-semibold">Log</h1>
-          <p className="text-primary-foreground/60 text-sm mt-1">Track your impact.</p>
+          <h1 className="font-display text-3xl font-semibold text-white">Log</h1>
+          <p className="text-white/60 text-sm mt-1">Track your impact.</p>
         </div>
       </div>
 
       <div className="max-w-2xl mx-auto px-6 py-6">
         <div className="bg-card border border-border/60 rounded-2xl shadow-sm p-6 mb-8">
           <form onSubmit={handleSubmit} className="space-y-5">
+            {/* Category selection */}
             <div>
               <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2 block">Category</label>
               <div className="grid grid-cols-2 gap-2">
@@ -164,7 +173,7 @@ export default function Log() {
                     onClick={() => { setCategory(value); setSubtype(value === "water" ? "shower" : "recyclable"); }}
                     className={cn(
                       "flex items-center justify-center gap-2 py-3 rounded-xl font-medium text-sm border transition-all",
-                      category === value ? "bg-primary text-primary-foreground border-primary" : "bg-muted border-transparent text-muted-foreground"
+                      category === value ? "bg-primary text-white border-primary" : "bg-muted border-transparent text-muted-foreground"
                     )}
                   >
                     <span>{emoji}</span> {label}
@@ -173,6 +182,7 @@ export default function Log() {
               </div>
             </div>
 
+            {/* Subtype selection */}
             <div>
               <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2 block">Type</label>
               <div className="grid grid-cols-2 gap-2">
@@ -183,7 +193,7 @@ export default function Log() {
                     onClick={() => setSubtype(value)}
                     className={cn(
                       "flex items-center gap-2 px-4 py-3 rounded-xl text-sm border transition-all",
-                      subtype === value ? "bg-teal-light border-primary text-primary font-medium" : "border-border bg-background"
+                      subtype === value ? "bg-primary/10 border-primary text-primary font-medium" : "border-border bg-background"
                     )}
                   >
                     <span>{emoji}</span> {label}
@@ -192,6 +202,7 @@ export default function Log() {
               </div>
             </div>
 
+            {/* Amount / Time input */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
@@ -246,6 +257,7 @@ export default function Log() {
                 />
               )}
 
+              {/* Point Preview */}
               {!isNaN(computedAmount) && computedAmount > 0 && (
                 <div className="mt-4 flex flex-col gap-2">
                   {category === "water" && useTime && (
@@ -255,7 +267,7 @@ export default function Log() {
                     </div>
                   )}
                   <div className="flex items-center justify-between px-4 py-3 bg-primary/10 rounded-xl border border-primary/20">
-                    <span className="text-sm font-medium text-primary/80">Potential Impact</span>
+                    <span className="text-sm font-medium text-primary/80">You will gain:</span>
                     <span className="text-base font-bold text-primary">
                       + {calcPointsForEntry(category, subtype, computedAmount)} Points
                     </span>
@@ -264,7 +276,7 @@ export default function Log() {
               )}
             </div>
 
-            {/* RE-ADDED DATE INPUT */}
+            {/* Date Input */}
             <div className="pt-2">
               <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2 block">Entry Date</label>
               <div className="relative">
@@ -283,7 +295,7 @@ export default function Log() {
             <Button
               type="submit"
               disabled={submitting || isNaN(computedAmount) || computedAmount <= 0}
-              className="w-full h-12 rounded-xl text-base font-semibold mt-4"
+              className="w-full h-12 rounded-xl text-base font-semibold mt-4 bg-primary text-white hover:bg-primary/90"
             >
               {submitting ? <Loader2 size={18} className="animate-spin mr-2" /> : success ? <CheckCircle2 size={18} className="mr-2" /> : <Plus size={18} className="mr-2" />}
               {submitting ? "Saving…" : success ? "Saved!" : "Log Entry"}
@@ -291,8 +303,9 @@ export default function Log() {
           </form>
         </div>
 
+        {/* Recent History Section */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-          <h2 className="font-display text-xl font-semibold">Recent History</h2>
+          <h2 className="font-display text-2xl font-bold">Recent History</h2>
           <div className="flex bg-muted p-1 rounded-xl w-fit">
             {["all", "waste", "water"].map((tab) => (
               <button
@@ -300,7 +313,7 @@ export default function Log() {
                 onClick={() => setActiveTab(tab)}
                 className={cn(
                   "px-4 py-1.5 rounded-lg text-xs font-medium transition-all capitalize",
-                  activeTab === tab ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                  activeTab === tab ? "bg-white text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
                 )}
               >
                 {tab}
@@ -319,7 +332,7 @@ export default function Log() {
         ) : (
           <div className="space-y-3">
             {filteredEntries.map(entry => (
-              <div key={entry.id} className="bg-card border border-border/60 rounded-2xl px-5 py-4 flex items-center gap-4 hover:border-primary/40 transition-colors">
+              <div key={entry.id} className="bg-white border border-border/60 rounded-2xl px-5 py-4 flex items-center gap-4 hover:border-primary/40 transition-colors">
                 <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center text-xl">
                   {getEntryIcon(entry)}
                 </div>
@@ -328,7 +341,7 @@ export default function Log() {
                   <p className="text-xs text-muted-foreground">{formatDate(entry.entry_date)}</p>
                 </div>
                 <div className="text-right">
-                  <p className="font-semibold text-sm">{entry.amount} {entry.category === "water" ? "L" : "kg"}</p>
+                  <p className="font-semibold text-base">{entry.amount} {entry.category === "water" ? "L" : "kg"}</p>
                 </div>
               </div>
             ))}
