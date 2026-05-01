@@ -123,6 +123,7 @@ export default function Home() {
       size={100} 
     />
   </div>
+  </div>
 
   <div className="flex-1">
     <div className="flex gap-8 mb-4">
