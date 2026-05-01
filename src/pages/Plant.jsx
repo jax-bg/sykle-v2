@@ -133,86 +133,89 @@ export default function Goals() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="bg-gradient-to-br from-primary to-[hsl(178,60%,20%)] text-primary-foreground px-6 pt-10 pb-8">
+      {/* Header section adjusted for mobile height */}
+      <div className="bg-gradient-to-br from-primary to-[hsl(178,60%,20%)] text-primary-foreground px-5 sm:px-6 pt-8 sm:pt-10 pb-6 sm:pb-8">
         <div className="max-w-2xl mx-auto">
-          <h1 className="font-display text-3xl font-semibold">Plant</h1>
-          <p className="text-primary-foreground/60 text-sm mt-1">Set goals to earn seeds.</p>
+          <h1 className="font-display text-2xl sm:text-3xl font-semibold">Plant</h1>
+          <p className="text-primary-foreground/60 text-xs sm:text-sm mt-1">Set goals to earn seeds.</p>
         </div>
       </div>
 
-      <div className="max-w-2xl mx-auto px-6 py-6">
-        {/* Level Card */}
-        <div className="bg-card rounded-2xl border border-border/60 shadow-sm p-8 mb-8">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 pb-8 border-b border-border/40">
-            <div className="flex items-center gap-8">
-              {/* Left: Progress Ring */}
-              <LevelRing 
-                lifetimePoints={profile?.lifetime_points || 0} 
-                size={140} 
-              />
+      <div className="max-w-2xl mx-auto px-4 sm:px-6 py-4 sm:py-6">
+        {/* Level Card: Grid/Stacking logic improved for mobile */}
+        <div className="bg-card rounded-2xl border border-border/60 shadow-sm p-5 sm:p-8 mb-6 sm:mb-8">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-border/40">
+            <div className="flex items-center gap-4 sm:gap-8">
+              {/* Left: Progress Ring (Smaller on mobile) */}
+              <div className="flex-shrink-0 scale-90 sm:scale-100">
+                <LevelRing 
+                  lifetimePoints={profile?.lifetime_points || 0} 
+                  size={100} 
+                />
+              </div>
 
               {/* Middle: Status Info */}
               <div className="flex-1">
-                <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-[0.2em] mb-1">
+                <p className="text-[9px] sm:text-[10px] text-muted-foreground uppercase font-bold tracking-[0.2em] mb-0.5">
                   Current Stage
                 </p>
-                <h2 className="font-display text-4xl font-bold text-primary leading-tight">
+                <h2 className="font-display text-2xl sm:text-4xl font-bold text-primary leading-tight">
                   {levelInfo.title}
                 </h2>
-                <div className="flex items-center gap-2 mt-1">
-                  <span className="text-lg font-black text-foreground">
+                <div className="flex items-center gap-2 mt-0.5">
+                  <span className="text-sm sm:text-lg font-black text-foreground">
                     {(profile?.lifetime_points || 0).toLocaleString()}
                   </span>
-                  <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
+                  <span className="text-[9px] sm:text-xs text-muted-foreground font-medium uppercase tracking-wider">
                     Total XP
                   </span>
                 </div>
               </div>
             </div>
 
-            {/* Right: Seeds Balance */}
-            <div className="flex flex-col md:items-end text-left md:text-right border-t md:border-t-0 md:border-l border-border/40 pt-6 md:pt-0 md:pl-10">
-              <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider mb-1">
-                Redeemable Seeds
-              </span>
-              <p className="text-3xl font-black text-gold">
-                {(profile?.points || 0).toLocaleString()}
-              </p>
-              <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-tighter mt-1">
+            {/* Right: Seeds Balance (Aligned for mobile flow) */}
+            <div className="flex flex-row md:flex-col items-center md:items-end justify-between md:justify-center text-left md:text-right border-t md:border-t-0 md:border-l border-border/40 pt-4 md:pt-0 md:pl-10">
+              <div className="flex flex-col">
+                <span className="text-[9px] sm:text-[10px] text-muted-foreground uppercase font-bold tracking-wider mb-0.5">
+                  Redeemable Seeds
+                </span>
+                <p className="text-2xl sm:text-3xl font-black text-gold">
+                  {(profile?.points || 0).toLocaleString()}
+                </p>
+              </div>
+              <p className="hidden sm:block text-[10px] text-muted-foreground font-medium uppercase tracking-tighter mt-1">
                 Available for harvest
               </p>
             </div>
           </div>
 
-          {/* Level milestones - Grid Layout */}
-          <div className="mt-8">
-            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.15em] mb-4">
+          {/* Level milestones: 2-column grid even on mobile to reduce height */}
+          <div className="mt-6">
+            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.15em] mb-3">
               Growth Journey
             </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-2 sm:gap-3">
               {LEVEL_MILESTONES.slice(0, 8).map(m => {
                 const unlocked = (profile?.lifetime_points || 0) >= m.points;
                 const isCurrent = levelInfo.level === m.level;
                 return (
                   <div key={m.level} className={cn(
-                    "flex items-center gap-3 px-4 py-3 rounded-2xl border transition-all",
+                    "flex items-center gap-2 sm:gap-3 px-3 py-2 sm:px-4 sm:py-3 rounded-xl sm:rounded-2xl border transition-all",
                     isCurrent 
                       ? "bg-primary/5 border-primary/30 shadow-sm" 
                       : unlocked 
                         ? "bg-background border-border/60" 
                         : "bg-muted/30 border-transparent opacity-50"
                   )}>
-                    <span className="text-2xl">{m.emoji}</span>
-                    <div className="flex-1">
-                      <p className={cn("text-sm font-bold", isCurrent ? "text-primary" : "text-foreground")}>
+                    <span className="text-xl sm:text-2xl">{m.emoji}</span>
+                    <div className="flex-1 min-w-0">
+                      <p className={cn("text-[11px] sm:text-sm font-bold truncate", isCurrent ? "text-primary" : "text-foreground")}>
                         {m.title}
                       </p>
-                      <p className="text-[10px] text-muted-foreground font-medium">
-                        {m.points.toLocaleString()} XP
+                      <p className="text-[8px] sm:text-[10px] text-muted-foreground font-medium">
+                        {m.points >= 1000 ? `${(m.points / 1000).toFixed(1)}k` : m.points} XP
                       </p>
                     </div>
-                    {unlocked && !isCurrent && <CheckCircle2 size={16} className="text-primary/60" />}
-                    {isCurrent && <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />}
                   </div>
                 );
               })}
@@ -222,10 +225,7 @@ export default function Goals() {
 
         {/* Goals Header */}
         <div className="flex items-center justify-between mb-4">
-          <div>
-            <h2 className="font-display text-xl font-semibold">My Goals</h2>
-            {formSuccess && <p className="text-sm text-green-600 mt-1">{formSuccess}</p>}
-          </div>
+          <h2 className="font-display text-lg sm:text-xl font-semibold">My Goals</h2>
           <Button
             size="sm"
             onClick={() => {
@@ -233,19 +233,19 @@ export default function Goals() {
               setFormError(null);
               setFormSuccess(null);
             }}
-            className="rounded-xl gap-1.5"
+            className="rounded-xl gap-1 h-9 px-3 text-xs sm:text-sm"
           >
-            <Plus size={16} /> New Goal
+            <Plus size={14} /> New Goal
           </Button>
         </div>
 
-        {/* Goal form */}
+        {/* Goal form: Inputs condensed for mobile focus */}
         {showForm && (
-          <div className="bg-card border border-border/60 rounded-2xl p-5 mb-5 shadow-sm">
+          <div className="bg-card border border-border/60 rounded-2xl p-4 sm:p-5 mb-5 shadow-sm">
             <form onSubmit={handleCreate} className="space-y-4">
-              <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-4">
                 <div>
-                  <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1.5 block">Category</label>
+                  <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-1.5 block">Category</label>
                   <div className="grid grid-cols-2 gap-2">
                     {LOG_CATEGORIES.map(cat => (
                       <button
@@ -253,10 +253,10 @@ export default function Goals() {
                         type="button"
                         onClick={() => setForm(f => ({ ...f, category: cat.value, subtype: cat.value === 'water' ? 'shower' : 'recyclable' }))}
                         className={cn(
-                          "flex items-center justify-center gap-2 py-3 rounded-xl font-medium text-sm border transition-all",
+                          "flex items-center justify-center gap-2 py-2.5 rounded-xl font-medium text-xs sm:text-sm border transition-all",
                           form.category === cat.value
                             ? "bg-primary text-primary-foreground border-primary"
-                            : "bg-muted border-transparent text-muted-foreground hover:bg-secondary"
+                            : "bg-muted border-transparent text-muted-foreground"
                         )}
                       >
                         <span>{cat.emoji}</span> {cat.label}
@@ -266,7 +266,7 @@ export default function Goals() {
                 </div>
 
                 <div>
-                  <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1.5 block">Type</label>
+                  <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-1.5 block">Type</label>
                   <div className="grid grid-cols-2 gap-2">
                     {(form.category === 'water' ? WATER_TYPES : WASTE_TYPES).map(typeOption => (
                       <button
@@ -274,10 +274,10 @@ export default function Goals() {
                         type="button"
                         onClick={() => setForm(f => ({ ...f, subtype: typeOption.value }))}
                         className={cn(
-                          "flex items-center gap-2 px-4 py-3 rounded-xl text-sm border transition-all",
+                          "flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs sm:text-sm border transition-all",
                           form.subtype === typeOption.value
                             ? "bg-teal-light border-primary text-primary font-medium"
-                            : "border-border bg-background text-foreground hover:bg-muted"
+                            : "border-border bg-background text-foreground"
                         )}
                       >
                         <span>{typeOption.emoji}</span> {typeOption.label}
@@ -287,40 +287,32 @@ export default function Goals() {
                 </div>
               </div>
 
-              <div className="grid gap-4 md:grid-cols-2">
-                <div>
-                  <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1.5 block">Goal name</label>
-                  <Input
-                    value={form.title}
-                    onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
-                    placeholder="e.g. Reduce shower water"
-                    required
-                    className="rounded-xl h-11"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1.5 block">Target value</label>
-                  <Input
-                    type="number"
-                    min="0"
-                    step="0.1"
-                    value={form.target_value}
-                    onChange={e => setForm(f => ({ ...f, target_value: e.target.value }))}
-                    placeholder="e.g. 200"
-                    required
-                    className="rounded-xl h-11"
-                  />
-                </div>
+              <div className="grid gap-3 sm:gap-4 md:grid-cols-2">
+                <Input
+                  value={form.title}
+                  onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
+                  placeholder="Goal name (e.g. Save Water)"
+                  required
+                  className="rounded-xl h-10 text-sm"
+                />
+                <Input
+                  type="number"
+                  min="0"
+                  step="0.1"
+                  value={form.target_value}
+                  onChange={e => setForm(f => ({ ...f, target_value: e.target.value }))}
+                  placeholder="Target amount"
+                  required
+                  className="rounded-xl h-10 text-sm"
+                />
               </div>
 
-              <div className="flex gap-3">
-                <Button type="button" variant="outline" onClick={() => setShowForm(false)} className="flex-1 rounded-xl">Cancel</Button>
-                <Button type="submit" disabled={submitting} className="flex-1 rounded-xl">
-                  {submitting && <Loader2 size={16} className="animate-spin mr-2" />}
-                  Create Goal
+              <div className="flex gap-2 sm:gap-3">
+                <Button type="button" variant="outline" onClick={() => setShowForm(false)} className="flex-1 rounded-xl h-10 text-xs sm:text-sm">Cancel</Button>
+                <Button type="submit" disabled={submitting} className="flex-1 rounded-xl h-10 text-xs sm:text-sm">
+                  {submitting ? <Loader2 size={14} className="animate-spin" /> : "Create"}
                 </Button>
               </div>
-              {formError && <p className="text-sm text-red-600">{formError}</p>}
             </form>
           </div>
         )}
@@ -328,34 +320,33 @@ export default function Goals() {
         {loading ? (
           <div className="flex justify-center py-12"><Loader2 className="animate-spin text-muted-foreground" /></div>
         ) : goals.length === 0 ? (
-          <div className="text-center py-12 text-muted-foreground">
-            <p className="text-4xl mb-3">🎯</p>
-            <p className="font-medium">No active goals yet</p>
-            <p className="text-sm mt-1">Set a goal to challenge yourself!</p>
+          <div className="text-center py-12 text-muted-foreground bg-muted/20 rounded-2xl border border-dashed border-border">
+            <p className="text-3xl mb-2">🎯</p>
+            <p className="text-sm font-medium">No active goals yet</p>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-3">
             {goals.map(goal => {
               const { total, progress } = getGoalProgress(goal);
               return (
-                <div key={goal.id} className="bg-card border border-border/60 rounded-2xl p-5 shadow-sm">
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between mb-3">
-                    <div>
-                      <p className="font-semibold">{goal.title}</p>
-                      <p className="text-xs text-muted-foreground capitalize">{goal.subtype} · {goal.category}</p>
+                <div key={goal.id} className="bg-card border border-border/60 rounded-xl p-4 shadow-sm">
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="min-w-0">
+                      <p className="font-semibold text-sm truncate">{goal.title}</p>
+                      <p className="text-[10px] text-muted-foreground capitalize">{goal.subtype} · {goal.category}</p>
                     </div>
-                    <button onClick={() => deleteGoal(goal.id)} className="text-muted-foreground hover:text-destructive transition-colors p-1">
-                      <Trash2 size={16} />
+                    <button onClick={() => deleteGoal(goal.id)} className="text-muted-foreground hover:text-destructive p-1">
+                      <Trash2 size={14} />
                     </button>
                   </div>
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
+                  <div className="space-y-1.5">
+                    <div className="flex justify-between text-[11px]">
                       <span className="text-muted-foreground">{total.toFixed(1)} / {goal.target_value}</span>
-                      <span className="font-medium text-primary">{Math.round(progress)}%</span>
+                      <span className="font-bold text-primary">{Math.round(progress)}%</span>
                     </div>
-                    <div className="bg-muted rounded-full h-2.5 overflow-hidden">
+                    <div className="bg-muted rounded-full h-2 overflow-hidden">
                       <div
-                        className={cn("h-2.5 rounded-full transition-all duration-700", progress >= 80 ? "bg-green-500" : progress >= 40 ? "bg-primary" : "bg-amber-500")}
+                        className={cn("h-full rounded-full transition-all duration-700", progress >= 80 ? "bg-green-500" : "bg-primary")}
                         style={{ width: `${progress}%` }}
                       />
                     </div>
