@@ -23,7 +23,7 @@ const tips = [
   "We are responsible for tomorrow.",
   "Help contribute to the UAE's Green Agenda - 2030.",
   "Using apps like this supports UAE initiatives like 'We the UAE Vision 2031'.",
-  "Check the Oasis to find places ro properly dispose your waste.",
+  "Check the Oasis to find places to properly dispose your waste.",
   "Set your goals and see your progress in Plant.",
   "You can use your seeds in Harvest to get rewards.",
   "Head to Glean to check the carbon footprint of your food.",
