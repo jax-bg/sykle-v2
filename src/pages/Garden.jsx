@@ -26,7 +26,7 @@ const tips = [
   "Check the Oasis to find places to properly dispose your waste.",
   "Set your goals and see your progress in Plant.",
   "You can use your seeds in Harvest to get rewards.",
-  "Head to Glean to check the carbon footprint of your food.",
+  "Head to Glean to learn more about your food.",
   "Keep track of your habits in Log."
 ];
 
