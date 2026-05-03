@@ -32,16 +32,16 @@ export function cn(...inputs) {
 
 export function getLevelInfo(lifetimePoints = 0) {
   const levels = [
-    { level: 1, title: "Seedling", emoji: "🌱", min: 0, max: 200 },
-    { level: 2, title: "Sprout", emoji: "🌿", min: 200, max: 500 },
-    { level: 3, title: "Sapling", emoji: "🪴", min: 500, max: 1000 },
-    { level: 4, title: "Tree", emoji: "🌳", min: 1000, max: 2000 },
-    { level: 5, title: "Grove", emoji: "🌲", min: 2000, max: 3500 },
-    { level: 6, title: "Forest", emoji: "🏞️", min: 3500, max: 5500 },
-    { level: 7, title: "Biome", emoji: "🌍", min: 5500, max: 8000 },
-    { level: 8, title: "Ecosystem", emoji: "🌏", min: 8000, max: 12000 },
-    { level: 9, title: "Rainforest", emoji: "🌎", min: 12000, max: 18000 },
-    { level: 10, title: "Earth Guardian", emoji: "🌟", min: 18000, max: Infinity },
+    { level: 1, title: "Seedling", emoji: "🌱", points: 0 },
+    { level: 2, title: "Sprout", emoji: "🌿", points: 200 },
+    { level: 3, title: "Sapling", emoji: "🪴", points: 500 },
+    { level: 4, title: "Tree", emoji: "🌴", points: 1000 },
+    { level: 5, title: "Grove", emoji: "🌳", points: 2000 },
+    { level: 6, title: "Forest", emoji: "🌲", points: 3500 },
+    { level: 7, title: "Rainforest", emoji: "🎄", points: 5500 },
+    { level: 8, title: "Biome", emoji: "🏞️", points: 8000 },
+    { level: 9, title: "Ecosystem", emoji: "🌎", points: 12000 },
+    { level: 10, title: "Earth Guardian", emoji: "🌟", points: 18000 },
   ];
   const current = levels.findLast(l => lifetimePoints >= l.min) || levels[0];
   const next = levels.find(l => l.min > lifetimePoints);
