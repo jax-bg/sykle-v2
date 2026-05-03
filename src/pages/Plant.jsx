@@ -179,7 +179,7 @@ export default function Goals() {
           <div className="mt-6">
             <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.15em] mb-3">Growth Journey</p>
             <div className="grid grid-cols-2 gap-2 sm:gap-3">
-              {LEVEL_MILESTONES.slice(0, 8).map(m => {
+              {LEVEL_MILESTONES.slice(0, 10).map(m => {
                 const unlocked = (profile?.lifetime_points || 0) >= m.points;
                 const isCurrent = levelInfo.level === m.level;
                 return (
