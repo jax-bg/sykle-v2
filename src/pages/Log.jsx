@@ -40,13 +40,9 @@ export default function Log() {
   };
 
   const loadData = useCallback(async (userId) => {
-  if (!userId) {
-    setLoading(false);
-    return;
-  }
-
-  setLoading(true);
-  try {
+    if (!userId) return;
+    setLoading(true);
+    
     const { data: logs, error } = await supabase
       .from('LogEntry')
       .select('*')
@@ -54,20 +50,23 @@ export default function Log() {
       .order('entry_date', { ascending: false })
       .limit(30);
 
-    if (error) throw error;
-    setEntries(logs || []);
-  } catch (error) {
-    console.error('Failed to load log entries:', error);
-  } finally {
+    if (error) {
+      console.error('Failed to load log entries:', error);
+    } else {
+      setEntries(logs || []);
+    }
     setLoading(false);
-  }
-}, []);
+  }, []);
 
   useEffect(() => {
-    if (!isLoadingAuth && authChecked && profile?.id) {
+  if (!isLoadingAuth && authChecked) {
+    if (profile?.id) {
       loadData(profile.id);
+    } else {
+      setLoading(false);
     }
-  }, [isLoadingAuth, authChecked, loadData]);
+  }
+}, [isLoadingAuth, authChecked, profile?.id, loadData]);
 
   const computedAmount = useTime && category === "water" && timeValue
     ? parseFloat((parseFloat(timeValue) * (timeUnit === "hours" ? 1 : 1 / 60) * WATER_RATES[subtype]).toFixed(1))
