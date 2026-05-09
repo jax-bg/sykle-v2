@@ -157,7 +157,7 @@ export default function Account() {
         <div className="max-w-md w-full rounded-3xl border border-border bg-card p-8 text-center shadow-lg">
           <UserCircle2 size={40} className="mx-auto mb-4 text-primary" />
           <h1 className="text-2xl font-semibold mb-2">Account required</h1>
-          <p className="text-sm text-muted-foreground mb-6">Please sign in to view and manage your account.</p>
+          <p className="text-sm text-muted-foreground mb-6">Please sign in to create and save your data.</p>
           <Button onClick={() => window.location.href = '/login'} className="w-full">Sign in</Button>
         </div>
       </div>
