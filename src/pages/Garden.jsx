@@ -100,23 +100,7 @@ export default function Home() {
               <Star size={16} className="text-gold fill-gold" />
               <span className="font-bold text-lg">{(profile?.points || 0).toLocaleString()}</span>
               <span className="text-xs text-primary-foreground/60">Seeds</span>
-              {isAuthenticated ? (
-                <button
-                  onClick={() => logout(false)}
-                  className="ml-3 rounded-full bg-secondary/90 px-3 py-1 text-xs font-semibold text-white transition hover:opacity-90"
-                >
-                  Sign out
-                </button>
-              ) : (
-                <button
-                  onClick={() => navigate("/login")}
-                  className="ml-3 rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground transition hover:opacity-90"
-                >
-                  Sign in
-                </button>
-              )}
-            </div>
-          </div>
+              
 
           {/* Streak */}
           <div className="flex items-center gap-2 bg-white/10 backdrop-blur rounded-2xl px-4 py-3 w-fit">
