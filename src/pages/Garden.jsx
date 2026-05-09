@@ -89,21 +89,23 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <div className="bg-gradient-to-br from-primary to-[hsl(178,60%,20%)] text-primary-foreground px-6 pt-10 pb-16">
-        <div className="max-w-2xl mx-auto">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <p className="text-primary-foreground/60 text-sm">Welcome back,</p>
-              <h1 className="font-display text-3xl font-semibold">{firstName}</h1>
-            </div>
-            <div className="flex items-center gap-2 bg-white/10 backdrop-blur rounded-2xl px-4 py-2">
-              <Star size={16} className="text-gold fill-gold" />
-              <span className="font-bold text-lg">{(profile?.points || 0).toLocaleString()}</span>
-              <span className="text-xs text-primary-foreground/60">Seeds</span>
-              </div>
-              </div>
-              </div>
-              </div>
+      <div className="bg-gradient-to-br from-primary to-[#145252] text-primary-foreground px-6 pt-10 pb-16">
+      <div className="max-w-2xl mx-auto">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <p className="text-white/60 text-sm">Welcome back,</p>
+            <h1 className="font-display text-3xl font-semibold">{firstName}</h1>
+          </div>
+          <div className="flex items-center gap-2 bg-white/10 backdrop-blur rounded-2xl px-4 py-2">
+            <Star size={16} className="text-gold fill-gold" />
+            <span className="font-bold text-lg">
+              {(profile?.points || 0).toLocaleString()}
+            </span>
+            <span className="text-xs text-white/60">Seeds</span>
+          </div>
+        </div>
+      </div>
+    </div>
 
           {/* Streak */}
           <div className="flex items-center gap-2 bg-white/10 backdrop-blur rounded-2xl px-4 py-3 w-fit">
