@@ -101,6 +101,9 @@ export default function Home() {
               <span className="font-bold text-lg">{(profile?.points || 0).toLocaleString()}</span>
               <span className="text-xs text-primary-foreground/60">Seeds</span>
               </div>
+              </div>
+              </div>
+              </div>
 
           {/* Streak */}
           <div className="flex items-center gap-2 bg-white/10 backdrop-blur rounded-2xl px-4 py-3 w-fit">
