@@ -359,11 +359,6 @@ export default function Scanner() {
               )}
             >
               <Icon size={16} /> {label}
-              {id === "history" && history.length > 0 && (
-                <span className="bg-primary text-primary-foreground text-[10px] font-bold px-1.5 py-0.5 rounded-full leading-none">
-                  {history.length}
-                </span>
-              )}
             </button>
           ))}
         </div>
