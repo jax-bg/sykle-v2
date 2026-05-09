@@ -261,7 +261,7 @@ export default function Account() {
 
         {/* Personal Settings Form */}
         <div className="bg-card rounded-3xl border border-border p-8 shadow-sm">
-          <h2 className="text-xl font-semibold mb-6">Profile Settings</h2>
+          <h2 className="text-xl font-semibold mb-6">Account Details</h2>
           <form onSubmit={handleSave} className="space-y-5">
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
