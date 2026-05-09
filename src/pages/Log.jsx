@@ -40,9 +40,13 @@ export default function Log() {
   };
 
   const loadData = useCallback(async (userId) => {
-    if (!userId) return;
-    setLoading(true);
-    
+  if (!userId) {
+    setLoading(false);
+    return;
+  }
+
+  setLoading(true);
+  try {
     const { data: logs, error } = await supabase
       .from('LogEntry')
       .select('*')
@@ -50,13 +54,14 @@ export default function Log() {
       .order('entry_date', { ascending: false })
       .limit(30);
 
-    if (error) {
-      console.error('Failed to load log entries:', error);
-    } else {
-      setEntries(logs || []);
-    }
+    if (error) throw error;
+    setEntries(logs || []);
+  } catch (error) {
+    console.error('Failed to load log entries:', error);
+  } finally {
     setLoading(false);
-  }, []);
+  }
+}, []);
 
   useEffect(() => {
     if (!isLoadingAuth && authChecked && profile?.id) {
