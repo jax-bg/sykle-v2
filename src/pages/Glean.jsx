@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { 
   supabase, 
   selectHistoryRows, 
@@ -195,7 +194,6 @@ export default function Scanner() {
   useEffect(() => {
     if (!navigator.mediaDevices?.getUserMedia) setCameraSupported(false);
     
-    // Fix for Illegal Constructor Error
     if ("BarcodeDetector" in window && typeof window.BarcodeDetector === "function") {
       setBarcodeDetectorSupported(true);
       try {

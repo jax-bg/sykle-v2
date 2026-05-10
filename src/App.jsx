@@ -7,7 +7,6 @@ import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import Layout from './components/Layout';
-// Add page imports here
 import Garden from './pages/Garden';
 import Log from './pages/Log';
 import Plant from './pages/Plant';

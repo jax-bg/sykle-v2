@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { supabase } from "@/lib/supabase";
 import { useState, useEffect } from "react";
 
@@ -9,7 +8,6 @@ import { Loader2, MapPin, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-// Fix leaflet default icons
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png",
@@ -53,7 +51,6 @@ const TYPE_LABELS = {
 
 const EMIRATES = ["All", "Abu Dhabi", "Dubai", "Sharjah", "Ajman", "Ras Al Khaimah", "Fujairah", "Umm Al Quwain"];
 
-// Default UAE disposal sites data (seeded if DB empty)
 const DEFAULT_SITES = [
   { name: "Tadweer Recycling Centre – Mussafah", emirate: "Abu Dhabi", address: "Mussafah Industrial Area, Abu Dhabi", types_accepted: ["recyclable", "plastic", "glass", "metal", "paper"], latitude: 24.3417, longitude: 54.5023, hours: "Sat-Thu 7am-5pm" },
   { name: "Al Quoz Recycling Park – Dubai", emirate: "Dubai", address: "Al Quoz Industrial Area 4, Dubai", types_accepted: ["recyclable", "e-waste", "metal", "plastic"], latitude: 25.1461, longitude: 55.2299, hours: "Mon-Sat 8am-6pm" },
@@ -80,7 +77,6 @@ export default function MapPage() {
   async function load() {
     setLoading(true);
     
-    // Just fetch the data you already added to Supabase
     const { data, error } = await supabase
       .from('disposal_sites')
       .select('*');

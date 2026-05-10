@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/AuthContext";
@@ -32,7 +31,6 @@ export default function Log() {
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Helper to find the correct emoji based on database subtype[cite: 1]
   const getSubtypeEmoji = (cat, sub) => {
     const list = cat === "water" ? WATER_TYPES : WASTE_TYPES;
     const match = list.find(item => item.value === sub);
@@ -107,7 +105,6 @@ export default function Log() {
         setEntries(prev => [data[0], ...prev].slice(0, 30));
       }
 
-      // Update Goals[cite: 1]
       const { data: matchingGoals } = await supabase
         .from('Goals')
         .select('id,current_value,target_value')

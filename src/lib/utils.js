@@ -33,13 +33,13 @@ export function cn(...inputs) {
 export function getLevelInfo(lifetimePoints = 0) {
   const levels = [
     { level: 1,  title: "Seedling",      emoji: "🌱", min: 0,      max: 200 },
-    { level: 2,  title: "Sprout",        emoji: "🌿", min: 200,    max: 600 },    // +400 gap
-    { level: 3,  title: "Sapling",       emoji: "🪴", min: 600,    max: 1400 },   // +800 gap
-    { level: 4,  title: "Tree",          emoji: "🌴", min: 1400,   max: 3000 },   // +1600 gap
-    { level: 5,  title: "Grove",         emoji: "🌳", min: 3000,   max: 6200 },   // +3200 gap
-    { level: 6,  title: "Forest",        emoji: "🌲", min: 6200,   max: 12600 },  // +6400 gap
-    { level: 7,  title: "Rainforest",    emoji: "🎄", min: 12600,  max: 25400 },  // +12800 gap
-    { level: 8,  title: "Biome",         emoji: "🏞️", min: 25400,  max: 51000 },  // ...and so on
+    { level: 2,  title: "Sprout",        emoji: "🌿", min: 200,    max: 600 },   
+    { level: 3,  title: "Sapling",       emoji: "🪴", min: 600,    max: 1400 }, 
+    { level: 4,  title: "Tree",          emoji: "🌴", min: 1400,   max: 3000 },   
+    { level: 5,  title: "Grove",         emoji: "🌳", min: 3000,   max: 6200 },   
+    { level: 6,  title: "Forest",        emoji: "🌲", min: 6200,   max: 12600 }, 
+    { level: 7,  title: "Rainforest",    emoji: "🎄", min: 12600,  max: 25400 },  
+    { level: 8,  title: "Biome",         emoji: "🏞️", min: 25400,  max: 51000 },  
     { level: 9,  title: "Ecosystem",     emoji: "🌎", min: 51000,  max: 100000 },
     { level: 10, title: "Earth Guardian", emoji: "🌟", min: 100000, max: Infinity },
   ];
@@ -53,7 +53,6 @@ export function getLevelInfo(lifetimePoints = 0) {
 
 export function calcPointsForEntry(category, subtype, amount) {
   if (category === "water") {
-    // Points for logging + bonus for keeping it low
     const basePoints = 10;
     if (amount <= 50) return basePoints + 20;
     if (amount <= 100) return basePoints + 10;

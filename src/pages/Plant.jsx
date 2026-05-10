@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/AuthContext";
@@ -136,7 +135,6 @@ export default function Goals() {
 
   const levelInfo = getLevelInfo(profile?.lifetime_points || 0);
 
-  // Dynamic unit logic based on Log.jsx resource types[cite: 3]
   const currentUnit = form.category === "water" ? "L" : "kg";
 
   return (

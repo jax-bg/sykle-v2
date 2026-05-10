@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabase"; // Reference from Log.jsx
-import { useAuth } from "@/lib/AuthContext"; // Reference from Log.jsx
+import { supabase } from "@/lib/supabase"; 
+import { useAuth } from "@/lib/AuthContext"; 
 
 import { Star, Gift, CheckCircle2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -47,10 +47,8 @@ export default function Rewards() {
     setLoading(true);
     const userId = profile?.id || user?.id;
 
-    // 1. Fetch Rewards
     let { data: rws, error: rwError } = await supabase.from('Reward').select('*');
     
-    // 2. Initial Setup: If Reward table is empty, seed it
     if (!rwError && (!rws || rws.length === 0)) {
       const { error: seedError } = await supabase.from('Reward').insert(DEFAULT_REWARDS);
       if (!seedError) {
@@ -59,7 +57,6 @@ export default function Rewards() {
       }
     }
 
-    // 3. Fetch Redemptions for the current user
     let reds = [];
     if (userId) {
       const { data: userReds } = await supabase
@@ -87,7 +84,6 @@ export default function Rewards() {
     try {
       const code = `ECO-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
       
-      // 1. Create Redemption Record
       const { error: redError } = await supabase.from('Redemption').insert([{
         user_id: userId,
         reward_id: reward.id,
@@ -98,12 +94,11 @@ export default function Rewards() {
 
       if (redError) throw redError;
 
-      // 2. Update User Points (Profile)
       const newPoints = currentPoints - reward.points_cost;
       await updateProfile({ points: newPoints });
 
       setRedeemed({ ...reward, code });
-      await loadData(); // Refresh history
+      await loadData(); 
     } catch (err) {
       console.error("Redemption failed:", err);
     } finally {

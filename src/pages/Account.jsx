@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/lib/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -6,10 +5,6 @@ import { Input } from '@/components/ui/input';
 import { Loader2, LogOut, UserCircle2, ShieldCheck, Users, Search, Save } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
-/**
- * Sub-component for individual admin user rows
- * Manages its own local state for seeds, lifetime points, and streaks
- */
 function AdminUserRow({ userItem, onUpdate }) {
   const [stats, setStats] = useState({
     points: userItem.points || 0,
@@ -84,7 +79,6 @@ export default function Account() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
 
-  // Admin States
   const [allUsers, setAllUsers] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [loadingUsers, setLoadingUsers] = useState(false);
