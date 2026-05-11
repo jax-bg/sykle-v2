@@ -147,7 +147,6 @@ export default function Goals() {
       </div>
 
       <div className="max-w-2xl mx-auto px-4 sm:px-6 py-4 sm:py-6">
-        {/* Level Progress Card[cite: 2] */}
         <div className="bg-card rounded-2xl border border-border/60 shadow-sm p-5 sm:p-8 mb-6 sm:mb-8">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-border/40">
             <div className="flex items-center gap-4 sm:gap-8">
