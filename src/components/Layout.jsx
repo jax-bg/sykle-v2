@@ -47,7 +47,7 @@ export default function Layout() {
           ))}
         </nav>
         <div className="p-4 border-t border-sidebar-border">
-          <p className="text-xs text-sidebar-foreground/40 text-center">12C Group 3: 💜, 💙, ❤️, 🩷</p>
+          <p className="text-xs text-sidebar-foreground/40 text-center">12C Group 3: 💜, 💙, ❤️, 🩷, 🧡</p>
         </div>
       </aside>
 
